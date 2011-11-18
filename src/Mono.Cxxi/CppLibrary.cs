@@ -6,6 +6,7 @@
 //   Andreia Gaita (shana@spoiledcat.net)
 //
 // Copyright (C) 2010-2011 Alexander Corrado
+// Copyright 2011 Xamarin Inc  (http://www.xamarin.com)
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -55,13 +56,17 @@ namespace Mono.Cxxi {
 	}
 
 	public sealed class CppLibrary {
-		internal static AssemblyBuilder interopAssembly;
-		internal static ModuleBuilder interopModule;
+
+		// Maps impl Type -> instance
+		private static Dictionary<Type,ICppClass> global_impl_cache = new Dictionary<Type, ICppClass> ();
 
 		public CppAbi Abi { get; private set; }
 		public string Name { get; private set; }
 		public InlineMethods InlineMethodPolicy { get; private set; }
 
+#if !DISABLE_EMIT
+		internal static AssemblyBuilder interopAssembly;
+		internal static ModuleBuilder interopModule;
 		static CppLibrary ()
 		{
 			AssemblyName assemblyName = new AssemblyName ("__CppLibraryImplAssembly");
@@ -70,6 +75,7 @@ namespace Mono.Cxxi {
 			interopAssembly = AppDomain.CurrentDomain.DefineDynamicAssembly (assemblyName, AssemblyBuilderAccess.RunAndSave);
 			interopModule = interopAssembly.DefineDynamicModule (moduleName, moduleName, true);
 		}
+#endif
 
 		public CppLibrary (string name)
 			: this (name, InlineMethods.NotPresent)
@@ -94,10 +100,12 @@ namespace Mono.Cxxi {
 			this.InlineMethodPolicy = inlinePolicy;
 		}
 
-		// Mainly for debugging at this point
-		public static void SaveInteropAssembly ()
+		// To potentially save on casts, returns the same obj as it's passed
+		public Iface RegisterClass<Iface> (Iface obj)
+			where Iface : ICppClass
 		{
-			interopAssembly.Save ("CppLibraryImplAssembly.dll");
+			global_impl_cache [typeof (Iface)] = obj;
+			return obj;
 		}
 
 		// For working with a class that you are not instantiating
@@ -105,8 +113,17 @@ namespace Mono.Cxxi {
 		public Iface GetClass<Iface> (string className)
 			where Iface : ICppClass
 		{
+			ICppClass impl;
+			if (global_impl_cache.TryGetValue (typeof (Iface), out impl))
+				return (Iface)impl;
+
+#if DISABLE_EMIT
+			throw new InvalidProgramException ("Class `" + className + "' not properly registered");
+#else
 			var typeInfo = Abi.MakeTypeInfo (this, className, typeof (Iface), null, null);
-			return (Iface)Abi.ImplementClass (typeInfo);
+			impl = Abi.ImplementClass (typeInfo);
+			return RegisterClass<Iface> ((Iface)impl);
+#endif
 		}
 
 		// For instantiating or working with a class that may have fields
@@ -115,8 +132,17 @@ namespace Mono.Cxxi {
 			where Iface : ICppClassInstantiatable
 			where NativeLayout : struct
 		{
+			ICppClass impl;
+			if (global_impl_cache.TryGetValue (typeof (Iface), out impl))
+				return (Iface)impl;
+
+#if DISABLE_EMIT
+			throw new InvalidProgramException ("Class `" + className + "' not properly registered");
+#else
 			var typeInfo = Abi.MakeTypeInfo (this, className, typeof (Iface), typeof (NativeLayout), null);
-			return (Iface)Abi.ImplementClass (typeInfo);
+			impl = Abi.ImplementClass (typeInfo);
+			return RegisterClass<Iface> ((Iface)impl);
+#endif
 		}
 
 		/* The most powerful override. Allows the following from managed code:
@@ -129,8 +155,17 @@ namespace Mono.Cxxi {
 			where NativeLayout : struct
 			where Managed : ICppObject
 		{
+			ICppClass impl;
+			if (global_impl_cache.TryGetValue (typeof (Iface), out impl))
+				return (Iface)impl;
+
+#if DISABLE_EMIT
+			throw new InvalidProgramException ("Class `" + className + "' not properly registered");
+#else
 			var typeInfo = Abi.MakeTypeInfo (this, className, typeof (Iface), typeof (NativeLayout), typeof (Managed));
-			return (Iface)Abi.ImplementClass (typeInfo);
+			impl = Abi.ImplementClass (typeInfo);
+			return RegisterClass<Iface> ((Iface)impl);
+#endif
 		}
 
 	}
