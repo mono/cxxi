@@ -70,14 +70,28 @@ namespace Mono.Cxxi.Abi {
 
 			if (methodType == MethodType.NativeCtor)
 				nm.Append ("?0");
-			else if (methodType == MethodType.NativeDtor)
-				nm.Append ("?1");
-			else
-				nm.Append (methodName).Append ('@');
+            else if (methodType == MethodType.NativeDtor)
+                nm.Append("?1");
+            else
+            {
+                
+                nm.Append(methodName).Append('@');
+            }
 
-			// FIXME: This has to include not only the name of the immediate containing class,
+            nm.Append(className);
+            nm.Append("@");
+            
+            // FIXME: This has to include not only the name of the immediate containing class,
 			//  but also all names of containing classes and namespaces up the hierarchy.
-			nm.Append (className).Append ("@@");
+            if (type.Namespaces != null)
+            {
+                foreach (var ns in type.Namespaces.Reverse())
+                {
+                    nm.Append(ns).Append("@");
+                }
+            }
+
+		    nm.Append ("@");
 
 			// function modifiers are a matrix of consecutive uppercase letters
 			// depending on access type and virtual (far)/static (far)/far modifiers
