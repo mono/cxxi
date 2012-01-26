@@ -16,3 +16,5 @@ tests/output
 src/generator/generator
 *.pc
 .DS_Store
+obj
+tests/generated

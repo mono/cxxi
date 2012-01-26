@@ -78,6 +78,7 @@
     <None Include="Native\FieldTests.cpp" />
     <None Include="Native\ManglingTests.h" />
     <None Include="Native\ManglingTests.cpp" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ProjectExtensions>
     <MonoDevelop>
