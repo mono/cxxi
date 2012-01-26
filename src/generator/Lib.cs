@@ -20,6 +20,12 @@ public class Lib {
 		set;
 	}
 
+    public string AbiType
+    {
+        get; 
+        set;
+    }
+
 	public string BaseNamespace {
 		get;
 		set;

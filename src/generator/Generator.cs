@@ -11,7 +11,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Linq;
 using System.Reflection;
-
+using Mono.Cxxi.Abi;
 using Templates;
 using NDesk.Options;
 using Mono.Cxxi;
@@ -64,6 +64,22 @@ public class Generator {
 		GenerateCode ();
 	}
 
+    string AbiTypeFromValue(string value)
+    {
+        switch (value.ToLower())
+        {
+            case "msvc":
+            case "msvcabi":
+                return typeof(MsvcAbi).Name;
+            
+            case "itanium":
+            case "itaniumabi":
+            default:
+                return typeof(ItaniumAbi).Name;
+            
+        }
+    }
+
 	int ParseArguments (String[] args) {
 		bool help = false;
 
@@ -73,7 +89,8 @@ public class Generator {
 				{ "ns=|namespace=", "Set the namespace of the generated code", v => Lib.BaseNamespace = v },
 				{ "lib=", "The base name of the C++ library, i.e. 'qt' for libqt.so", v =>Lib.BaseName = v },
 				{ "filters=", "A file containing filter directives for filtering classes", v => FilterFile = v },
-				{ "inline=", "Inline methods in lib are: notpresent (default), present, surrogatelib (present in %lib%-inline)", v => Lib.InlinePolicy = (InlineMethods)Enum.Parse (typeof (InlineMethods), v, true) }
+				{ "inline=", "Inline methods in lib are: notpresent (default), present, surrogatelib (present in %lib%-inline)", v => Lib.InlinePolicy = (InlineMethods)Enum.Parse (typeof (InlineMethods), v, true) },
+                { "abi=", "ABI type: ItaniumAbi, MsvcAbi", v => Lib.AbiType = AbiTypeFromValue(v)}
 			};
 
 		try {
@@ -104,6 +121,9 @@ public class Generator {
 			Console.WriteLine ("The --lib= option is required.");
 			return 1;
 		}
+
+        if (Lib.AbiType == null)
+            Lib.AbiType = typeof(ItaniumAbi).Name;
 
 		if (Lib.BaseNamespace == null) {
 			Lib.BaseNamespace = Path.GetFileNameWithoutExtension (Lib.BaseName);

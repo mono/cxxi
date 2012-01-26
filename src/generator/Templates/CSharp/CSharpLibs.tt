@@ -8,12 +8,13 @@
 
 using System;
 using Mono.Cxxi;
+using Mono.Cxxi.Abi;
 
 namespace <#= Generator.Lib.BaseNamespace #> {
 
 	public static partial class Libs {
 <# foreach (var lib in Libs) { #>
-		public static readonly CppLibrary <#= CSharpLanguage.SafeIdentifier (lib.BaseName) #> = new CppLibrary ("<#= lib.BaseName #>", InlineMethods.<#= lib.InlinePolicy #>);
+		public static readonly CppLibrary <#= CSharpLanguage.SafeIdentifier (lib.BaseName) #> = new CppLibrary ("<#= lib.BaseName #>", <#= lib.AbiType #>.Instance, InlineMethods.<#= lib.InlinePolicy #>);
 <# } #>
 	}
 }
