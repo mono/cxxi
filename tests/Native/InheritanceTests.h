@@ -1,5 +1,12 @@
+#ifdef __GNUC__
+#define EXPORT
+#elif defined(_MSC_VER)
+#define EXPORT __declspec(dllexport)
+#else
+#error Unknown compiler!
+#endif
 
-class NumberClass {
+class EXPORT NumberClass {
 protected:
 	int num;
 public:
@@ -9,42 +16,42 @@ public:
 	virtual ~NumberClass ();
 };
 
-class AdderClass : public NumberClass {
+class EXPORT AdderClass : public NumberClass {
 public:
 	AdderClass (int n);
 	virtual void Add (int n);
 };
-class AdderClassWithVirtualBase : public virtual NumberClass {
+class EXPORT AdderClassWithVirtualBase : public virtual NumberClass {
 public:
 	AdderClassWithVirtualBase (int n);
 	virtual void Add (int n);
 };
 
-class MultiplierClass : public NumberClass {
+class EXPORT MultiplierClass : public NumberClass {
 public:
 	MultiplierClass (int n);
 	virtual void Multiply (int n);
 };
-class MultiplierClassWithVirtualBase : public virtual NumberClass {
+class EXPORT MultiplierClassWithVirtualBase : public virtual NumberClass {
 public:
 	MultiplierClassWithVirtualBase (int n);
 	virtual void Multiply (int n);
 };
 
-class ClassWithNonVirtualBases : public AdderClass, public MultiplierClass {
+class EXPORT ClassWithNonVirtualBases : public AdderClass, public MultiplierClass {
 public:
 	// num is not shared between AdderClass and MultiplierClass; Add and Multiply should operate on different numbers
 	ClassWithNonVirtualBases (int addN, int multN) : AdderClass (addN), MultiplierClass (multN) {}
 	virtual void CallMultiply (int n) { this->Multiply (n); }
 };
-class ClassWithVirtualBases : public AdderClassWithVirtualBase, public MultiplierClassWithVirtualBase {
+class EXPORT ClassWithVirtualBases : public AdderClassWithVirtualBase, public MultiplierClassWithVirtualBase {
 public:
 	// num is shared between AdderClass and MultiplierClass; Add and Multiply should both operate on n
 	ClassWithVirtualBases (int n) : NumberClass (n-2), AdderClassWithVirtualBase (n-1), MultiplierClassWithVirtualBase (n) {}
 };
 
 
-class ClassThatOverridesStuff : public NumberClass {
+class EXPORT ClassThatOverridesStuff : public NumberClass {
 protected:
 	int myNum;
 public:
@@ -55,7 +62,7 @@ public:
 	static NumberClass* GetInstance (int num, int my);
 };
 
-class ClassThatRoundtrips : public MultiplierClass {
+class EXPORT ClassThatRoundtrips : public MultiplierClass {
 protected:
 	MultiplierClass* that;
 public:

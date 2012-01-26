@@ -30,4 +30,5 @@ void Ns1::Ns2::Namespaced2::Test1 ()
 Ns1::Ns2::Namespaced2* Ns1::Ns2::Namespaced2::Test2 (Compression* a1)
 {
 	printf ("Ns1::Ns2::Namespaced2::Test2");
+	return 0;
 }

@@ -1,5 +1,12 @@
+#ifdef __GNUC__
+#define EXPORT
+#elif defined(_MSC_VER)
+#define EXPORT __declspec(dllexport)
+#else
+#error Unknown compiler!
+#endif
 
-class ClassWithCopyCtor {
+class EXPORT ClassWithCopyCtor {
 	int x;
 
 public:
@@ -14,7 +21,7 @@ public:
 	int GetX ();
 };
 
-class ClassWithDtor {
+class EXPORT ClassWithDtor {
 	int x;
 
 public:
@@ -31,7 +38,7 @@ public:
 };
 
 
-class ClassWithoutCopyCtor {
+class EXPORT ClassWithoutCopyCtor {
 	int x;
 
 public:
@@ -44,7 +51,7 @@ public:
 	int GetX ();
 };
 
-class Class {
+class EXPORT Class {
 	int x;
 
 public:
