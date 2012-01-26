@@ -62,6 +62,7 @@ namespace Mono.Cxxi.Abi {
 			var methodName = methodInfo.Name;
 			var type = typeInfo.GetMangleType ();
 			var className = type.ElementTypeName;
+            var backReferences = new BackReferenceList();
 
 			MethodType methodType = GetMethodType (typeInfo, methodInfo);
 			ParameterInfo [] parameters = methodInfo.GetParameters ();
@@ -74,10 +75,11 @@ namespace Mono.Cxxi.Abi {
                 nm.Append("?1");
             else
             {
-                
+                backReferences.Add(methodName);
                 nm.Append(methodName).Append('@');
             }
 
+            backReferences.Add(className);
             nm.Append(className);
             nm.Append("@");
             
@@ -87,6 +89,7 @@ namespace Mono.Cxxi.Abi {
             {
                 foreach (var ns in type.Namespaces.Reverse())
                 {
+                    backReferences.Add(ns);
                     nm.Append(ns).Append("@");
                 }
             }
@@ -136,30 +139,42 @@ namespace Mono.Cxxi.Abi {
 
 			// FIXME: handle const, volatile modifiers on return type
 			// FIXME: the manual says this is only omitted for simple types.. are we doing the right thing here?
-			CppType returnType = GetMangleType (methodInfo.ReturnTypeCustomAttributes, methodInfo.ReturnType);
-			if (returnType.ElementType == CppTypes.Class ||
-			    returnType.ElementType == CppTypes.Struct ||
-			    returnType.ElementType == CppTypes.Union)
-				nm.Append ("?A");
 
-			if (methodType == MethodType.NativeCtor || methodType == MethodType.NativeDtor)
-				nm.Append ('@');
-			else
-				nm.Append (GetTypeCode (returnType));
+            if (methodType == MethodType.NativeCtor || methodType == MethodType.NativeDtor)
+            {
+                nm.Append('@');
+            }
+            else
+            {
+                CppType returnType = GetMangleType(methodInfo.ReturnTypeCustomAttributes, methodInfo.ReturnType);
+                //if (returnType.ElementType == CppTypes.Class ||
+                //    returnType.ElementType == CppTypes.Struct ||
+                //    returnType.ElementType == CppTypes.Union)
+                //    nm.Append("?A");
 
-			int argStart = (IsStatic (methodInfo)? 0 : 1);
-			if (parameters.Length == argStart) { // no args (other than C++ "this" object)
-				nm.Append ("XZ");
-				return nm.ToString ();
-			} else
-				for (int i = argStart; i < parameters.Length; i++)
-					nm.Append (GetTypeCode (GetMangleType (parameters [i], parameters [i].ParameterType)));
+                nm.Append(GetTypeCode(returnType, backReferences));
+            }
 
-			nm.Append ("@Z");
+            
+		    int argStart = (IsStatic (methodInfo)? 0 : 1);
+            if (parameters.Length == argStart)
+            { // no args (other than C++ "this" object)
+                nm.Append("XZ");
+                return nm.ToString();
+            }
+
+            var argumentBackReferences = new BackReferenceList();
+            for (int i = argStart; i < parameters.Length; i++)
+            {
+                var typeCode = GetTypeCode(GetMangleType(parameters[i], parameters[i].ParameterType), backReferences);
+                nm.Append(argumentBackReferences.Add(typeCode));
+            }
+
+		    nm.Append ("@Z");
 			return nm.ToString ();
 		}
 
-		public virtual string GetTypeCode (CppType mangleType)
+        public virtual string GetTypeCode(CppType mangleType, BackReferenceList backReferences)
 		{
 			CppTypes element = mangleType.ElementType;
 			IEnumerable<CppModifiers> modifiers = mangleType.Modifiers;
@@ -192,7 +207,7 @@ namespace Mono.Cxxi.Abi {
 			);
 			code.Append (modifierCode.ToArray ());
 
-			switch (element) {
+		    switch (element) {
 			case CppTypes.Void:
 				code.Append ('X');
 				break;
@@ -206,29 +221,81 @@ namespace Mono.Cxxi.Abi {
 				break;
 			case CppTypes.Class:
 				code.Append ('V');
-				code.Append(mangleType.ElementTypeName);
-				code.Append ("@@");
+		        code.Append(GetTypeNameWithBackReferences(mangleType, backReferences));
+		        code.Append ("@");
 				break;
 			case CppTypes.Struct:
 				code.Append ('U');
-				code.Append(mangleType.ElementTypeName);
-				code.Append ("@@");
+                code.Append(GetTypeNameWithBackReferences(mangleType, backReferences));
+                code.Append ("@");
 				break;
 			case CppTypes.Union:
 				code.Append ('T');
-				code.Append(mangleType.ElementTypeName);
-				code.Append ("@@");
+                code.Append(GetTypeNameWithBackReferences(mangleType, backReferences));
+                code.Append ("@");
 				break;
 			case CppTypes.Enum:
 				code.Append ("W4");
-				code.Append(mangleType.ElementTypeName);
-				code.Append ("@@");
+                code.Append(GetTypeNameWithBackReferences(mangleType, backReferences));
+                code.Append ("@");
 				break;
 			}
 
 			return code.ToString ();
 		}
 
+        private static string GetTypeNameWithBackReferences(CppType mangleType, BackReferenceList backReferences)
+	    {
+	        var sb = new StringBuilder();
+	        sb.Append(GetTypeCodeOrBackReference(mangleType.ElementTypeName, backReferences));
+	        if (mangleType.Namespaces != null)
+	        {
+	            foreach (var ns in mangleType.Namespaces.Reverse())
+	            {
+	                sb.Append(GetTypeCodeOrBackReference(ns, backReferences));
+	            }
+	        }
+	        return sb.ToString();
+	    }
+
+	    private static string GetTypeCodeOrBackReference(string elementTypeName, BackReferenceList backReferences)
+	    {
+	        if (backReferences.Contains(elementTypeName)) 
+                return backReferences[elementTypeName];
+
+	        return elementTypeName + "@";
+	    }
+
+	    public class BackReferenceList
+        {
+            private readonly Dictionary<string, int> _backReferences = new Dictionary<string, int>();
+
+            public string this[string key] 
+            { 
+                get
+                {
+                    return _backReferences[key].ToString();
+                }
+            }
+
+            public bool Contains(string value)
+            {
+                return _backReferences.ContainsKey(value);
+            }
+
+            public string Add(string value)
+            {
+                if (value.Length == 1)
+                    return value;
+
+                if (_backReferences.ContainsKey(value))
+                    return _backReferences[value].ToString();
+
+                _backReferences.Add(value, _backReferences.Count);
+
+                return value;
+            }
+        }
 	}
 }
 
