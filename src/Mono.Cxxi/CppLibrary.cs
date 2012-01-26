@@ -70,7 +70,12 @@ namespace Mono.Cxxi {
 			string moduleName = "CppLibraryImplAssembly.dll";
 
 			interopAssembly = AppDomain.CurrentDomain.DefineDynamicAssembly (assemblyName, AssemblyBuilderAccess.RunAndSave);
-			interopModule = interopAssembly.DefineDynamicModule (moduleName, moduleName, true);
+            
+            /* emitSymbolInfo == true causes an error when generating types
+             * on call to typeInfo.emit_info.type_builder.CreateType()
+             * in CppAbi.ImplementClass
+             */
+            interopModule = interopAssembly.DefineDynamicModule (moduleName, moduleName, false);
 		}
 
 		public CppLibrary (string name)
@@ -134,6 +139,5 @@ namespace Mono.Cxxi {
 			var typeInfo = Abi.MakeTypeInfo (this, className, typeof (Iface), typeof (NativeLayout), typeof (Managed));
 			return (Iface)Abi.ImplementClass (typeInfo);
 		}
-
 	}
 }
