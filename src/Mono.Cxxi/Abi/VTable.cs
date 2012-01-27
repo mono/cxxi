@@ -29,7 +29,7 @@
 using System;
 using System.Diagnostics;
 using System.Collections.Generic;
-
+using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
@@ -85,6 +85,9 @@ namespace Mono.Cxxi.Abi {
 			var vtable = instance.NativeVTable;
 
 			var ftnptr = Marshal.ReadIntPtr (vtable, (index * EntrySize) + type_info.VTableTopPadding);
+            if(ftnptr.ToInt32() < 0)
+                throw new InvalidDataException("Function pointer should not be negative.");
+
 			if (ftnptr == IntPtr.Zero)
 				throw new NullReferenceException ("Native VTable contains null...possible abstract class???");
 
