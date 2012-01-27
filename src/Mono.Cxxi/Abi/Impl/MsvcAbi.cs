@@ -239,6 +239,9 @@ namespace Mono.Cxxi.Abi {
                 code.Append(GetTypeNameWithBackReferences(mangleType, backReferences));
                 code.Append ("@");
 				break;
+            case CppTypes.Bool:
+                code.Append ("_N");
+                break;
 			}
 
 			return code.ToString ();
