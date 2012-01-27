@@ -348,6 +348,11 @@ if (!Nested) {
 
 		if (Generator.IsByVal (method.ReturnType)) {
 			Write ("[return: ByVal] ");
+		} else {
+			var returnType = CSharpLanguage.TypeName (Generator.CppTypeToManaged (method.ReturnType), Context.Wrapper | Context.Return);
+			var mangleAs = method.ReturnType.ToString();
+			if (mangleAs != "" && mangleAs != returnType)
+				Write("[return: MangleAs (\"{0}\")] ", mangleAs);
 		}
 		if (method.IsConstructor)
 			Write ("CppInstancePtr");
