@@ -1,6 +1,7 @@
 @echo off
 
 SET FILES=MarshalingTests InheritanceTests FieldTests ManglingTests
+SET CLASSES=HasField NumberClass AdderClass AdderClassWithVirtualBase MultiplierClass MultiplierClassWithVirtualBase ClassWithNonVirtualBases ClassWithVirtualBases ClassThatOverridesStuff ClassThatRoundtrips Compression Namespaced Namespaced2 ClassWithCopyCtor ClassWithDtor ClassWithoutCopyCtor Class
 SET top_srcdir=..\
 SET BUILD_DIR=%top_srcdir%bin\Debug\
 SET INTEROP_DLL=%BUILD_DIR%Mono.Cxxi.dll
@@ -67,7 +68,10 @@ goto :eof
 
 :build_native
 	SET CPPFILES=Native\%FILES: =.cpp Native\%.cpp
-	cl /Fe%BUILD_DIR%libtest.dll /LD %CPPFILES%
+	SET LAYOUT_OPTIONS=/d1reportAllClassLayout
+	SET LAYOUT_OPTIONS=/d1reportSingleClassLayout%CLASSES: = /d1reportSingleClassLayout%
+	
+	cl /nologo /Fe%BUILD_DIR%libtest.dll /LD %CPPFILES% %LAYOUT_OPTIONS% > VSClassLayouts.txt
 goto :eof
 
 :test_dll
