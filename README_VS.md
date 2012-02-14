@@ -5,7 +5,7 @@
 For GCC_XML you have two options:
 
   1. Download GCC_XML source and use CMake to compile it (You must use source as 0.6.0 does not support VS 2010)
-  2. Download a precompiled version from here: http://goo.gl/CbVPx and install it. Make sure its on your path
+  2. Download a precompiled version from here: http://goo.gl/ZqfnH and install it. Make sure its on your path
 
 ## GIT
 
