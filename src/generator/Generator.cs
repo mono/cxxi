@@ -234,6 +234,8 @@ public class Generator {
 				Class baseClass = NodeToNamespace [bn.NodeForAttr ("type")] as Class;
 				Debug.Assert (baseClass != null);
 				klass.BaseClasses.Add (baseClass);
+                if (bn.IsTrue("virtual"))
+                    klass.VirtualBases.Add (baseClass);
 			}
 		}
 	}

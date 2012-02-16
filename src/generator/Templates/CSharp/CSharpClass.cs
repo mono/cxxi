@@ -85,6 +85,17 @@ private void WriteParameters (IList<Parameter> parameters, bool writeType, bool 
 	}
 }
 
+private string GetVirtualBasesString()
+{
+    if (Class.VirtualBases.Count == 0)
+        return string.Empty;
+
+    // Should probably use a StringBuilder in here
+    string virtualBases = "[";
+    Class.VirtualBases.ForEach((c) => virtualBases += "VirtualBase(typeof(" + string.Join(".", c.FullyQualifiedName) + ")), ");
+    return virtualBases.Substring(0, virtualBases.Length - 2) + "]" + Environment.NewLine;
+}
+
 private string GetBaseString ()
 {
 	if (Class.BaseClasses.Count == 0)
@@ -181,6 +192,9 @@ if (!Nested) {
             
             #line default
             #line hidden
+
+            #line 30 "/Users/alex/OpenSource/cppinterop/src/generator/Templates/CSharp/CSharpClass.tt"
+            this.Write("\t" + GetVirtualBasesString());
             
             #line 30 "/Users/alex/OpenSource/cppinterop/src/generator/Templates/CSharp/CSharpClass.tt"
             this.Write("\tpublic partial class ");

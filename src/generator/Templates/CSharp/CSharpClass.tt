@@ -27,7 +27,7 @@ using Mono.Cxxi;
 
 namespace <#= @namespace #> {
 <# } /* if !Nested */ #>
-	public partial class <#= wrapper #> : <#= GetBaseString () #> {
+	<#= GetVirtualBasesString () #> public partial class <#= wrapper #> : <#= GetBaseString () #> {
 
 		private static readonly <#= iface #> impl = Libs.<#= Generator.Lib.BaseName #>.GetClass<<#= iface + "," + layout + "," + wrapper #>> ("<#= Class.Name #>");
 <# if (!hasBase) { #>
@@ -391,6 +391,16 @@ private void WriteParameters (IList<Parameter> parameters, bool writeType, bool 
 
 		Write (CSharpLanguage.SafeIdentifier (parameters [i].Name));
 	}
+}
+
+private string GetVirtualBasesString()
+{
+    if (Class.VirtualBases.Count == 0)
+        return string.Empty;
+
+    string virtualBases = "[";
+    Class.VirtualBases.ForEach((c) => virtualBases += "VirtualBase(typeof(" + string.Join(".", c.FullyQualifiedName) + ")), ");
+    return virtualBases.Substring(0, virtualBases.Length - 2) + "]" + Environment.NewLine;
 }
 
 private string GetBaseString ()

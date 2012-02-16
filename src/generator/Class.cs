@@ -38,6 +38,7 @@ public class Class : Namespace {
 		: base (n)
 	{
 		BaseClasses = new List<Class> ();
+        VirtualBases = new List<Class> ();
 		Fields = new List<Field> ();
 		Properties = new List<Property> ();
 		Methods = new List<Method> ();
@@ -47,7 +48,11 @@ public class Class : Namespace {
 
 	public List<Class> BaseClasses {
 		get; set;
-	}
+    }
+
+    public List<Class> VirtualBases {
+        get; set;
+    }
 
 	public List<Class> NestedClasses {
 		get; set;

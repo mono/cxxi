@@ -10,10 +10,45 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Collections.Generic;
 
 namespace Mono.Cxxi {
 
-	#region Interface method attributes
+    #region Interface method attributes
+
+    [AttributeUsage(AttributeTargets.Class)]
+    public class VirtualBaseAttribute : Attribute
+    {
+
+        public VirtualBaseAttribute(string type)
+            : this(Type.GetType(type))
+        {
+        }
+
+        public VirtualBaseAttribute(Type t)
+        {
+            this.VirtualBaseType = t;
+        }
+
+        public Type VirtualBaseType
+        {
+            get;
+            private set;
+        }
+
+        public static bool IsVirtualBaseOf<T>(T instance, Type virtualBase)
+            where T : class
+        {
+            return IsVirtualBaseOf<T>(virtualBase);
+        }
+
+        public static bool IsVirtualBaseOf<T>(Type virtualBase)
+            where T : class
+        {
+            return typeof(T).GetCustomAttributes(typeof(VirtualBaseAttribute), false)
+                .Cast<VirtualBaseAttribute>().Any(v => v.VirtualBaseType == virtualBase);
+        }
+    }
 
 	[AttributeUsage (AttributeTargets.Method)]
 	public class ConstructorAttribute : Attribute {}
