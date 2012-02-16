@@ -147,12 +147,15 @@ namespace Mono.Cxxi.Abi {
             else
             {
                 CppType returnType = GetMangleType(methodInfo.ReturnTypeCustomAttributes, methodInfo.ReturnType);
-                //if (returnType.ElementType == CppTypes.Class ||
-                //    returnType.ElementType == CppTypes.Struct ||
-                //    returnType.ElementType == CppTypes.Union)
-                //    nm.Append("?A");
+				// TODO: Should this actually be done in CppType.ToManagedType
+				// I wasn't sure how it would affect Itanium mangled names
+                bool hadPointer = false;
+                if (methodInfo.ReturnTypeCustomAttributes.IsDefined(typeof(ByValAttribute), false))
+                    hadPointer = returnType.Modifiers.Remove(CppModifiers.Pointer);
 
                 nm.Append(GetTypeCode(returnType, backReferences));
+                if (hadPointer)
+                    returnType.Modifiers.Add(CppModifiers.Pointer);
             }
 
             
@@ -206,6 +209,12 @@ namespace Mono.Cxxi.Abi {
 			        ptrRefOrArray.AtEnd ().Emit ('A')
 			);
 			code.Append (modifierCode.ToArray ());
+
+            if (code.Length == 0 &&
+                (mangleType.ElementType == CppTypes.Class ||
+                mangleType.ElementType == CppTypes.Struct ||
+                mangleType.ElementType == CppTypes.Union))
+                code.Append("?A");
 
 		    switch (element) {
 			case CppTypes.Void:
