@@ -145,7 +145,7 @@ public class Generator {
 		while (reader.Read()) {
 			if (reader.IsStartElement ()) {
 				string type = reader.Name;
-
+                int depth = reader.Depth;
 				var attributes = new Dictionary<string, string> ();
 				while (reader.MoveToNextAttribute ()) {
 					attributes [reader.Name] = reader.Value;
@@ -166,11 +166,11 @@ public class Generator {
 				if (attributes.ContainsKey ("name"))
 					n.Name = attributes ["name"];
 
-				if (parents [reader.Depth - 1] != null) {
+				if (depth > 0 && parents [depth - 1] != null) {
 					//Console.WriteLine (parents [reader.Depth - 1].type + " -> " + e.type);
-					parents [reader.Depth - 1].Children.Add (n);
+					parents [depth - 1].Children.Add (n);
 				}
-				parents [reader.Depth] = n;
+				parents [depth] = n;
 
 				if (n.Type == "GCC_XML" && root == null)
 					root = n;
