@@ -151,7 +151,14 @@ namespace Mono.Cxxi.Abi {
 				// I wasn't sure how it would affect Itanium mangled names
                 bool hadPointer = false;
                 if (methodInfo.ReturnTypeCustomAttributes.IsDefined(typeof(ByValAttribute), false))
+                {
                     hadPointer = returnType.Modifiers.Remove(CppModifiers.Pointer);
+
+                    if (returnType.ElementType == CppTypes.Class ||
+                        returnType.ElementType == CppTypes.Struct ||
+                        returnType.ElementType == CppTypes.Union)
+                        nm.Append("?A");
+                }
 
                 nm.Append(GetTypeCode(returnType, backReferences));
                 if (hadPointer)
@@ -209,12 +216,6 @@ namespace Mono.Cxxi.Abi {
 			        ptrRefOrArray.AtEnd ().Emit ('A')
 			);
 			code.Append (modifierCode.ToArray ());
-
-            if (code.Length == 0 &&
-                (mangleType.ElementType == CppTypes.Class ||
-                mangleType.ElementType == CppTypes.Struct ||
-                mangleType.ElementType == CppTypes.Union))
-                code.Append("?A");
 
 		    switch (element) {
 			case CppTypes.Void:
