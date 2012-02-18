@@ -42,8 +42,10 @@ namespace Mono.Cxxi {
         private Dictionary<Type, IntPtr> base_vtables;
         private Dictionary<Type, IntPtr> base_ptrs;
 
-		private static Dictionary<IntPtr,int> managed_vtptr_to_gchandle_offset = null;
-        private static Dictionary<IntPtr, IntPtr> non_primary_base_to_gchandle = null;
+		private static Dictionary<IntPtr,int> managed_vtptr_to_gchandle_offset = 
+            new Dictionary<IntPtr,int>();
+        private static Dictionary<IntPtr, IntPtr> non_primary_base_to_gchandle = 
+            new Dictionary<IntPtr,IntPtr>();
 
 		// Alloc a new C++ instance
 		internal CppInstancePtr (CppTypeInfo typeInfo, object managedWrapper)
@@ -193,26 +195,26 @@ namespace Mono.Cxxi {
 
 		internal static void RegisterManagedVTable (VTable vtable)
 		{
-			if (managed_vtptr_to_gchandle_offset == null)
-				managed_vtptr_to_gchandle_offset = new Dictionary<IntPtr, int> ();
-
-			managed_vtptr_to_gchandle_offset [vtable.Pointer] = vtable.TypeInfo.GCHandleOffset;
+            lock (managed_vtptr_to_gchandle_offset)
+            {
+                managed_vtptr_to_gchandle_offset[vtable.Pointer] = vtable.TypeInfo.GCHandleOffset;
+            }
 		}
 
         internal static void RegisterNonPrimaryBase(IntPtr basePtr, IntPtr gcHandle)
         {
-            if (non_primary_base_to_gchandle == null)
-                non_primary_base_to_gchandle = new Dictionary<IntPtr, IntPtr>();
-
-            non_primary_base_to_gchandle[basePtr] = gcHandle;
+            lock (non_primary_base_to_gchandle)
+            {
+                non_primary_base_to_gchandle[basePtr] = gcHandle;
+            }
         }
 
         internal static void UnregisterNonPrimaryBase(IntPtr basePtr)
         {
-            if (non_primary_base_to_gchandle == null)
-                return;
-
-            non_primary_base_to_gchandle.Remove(basePtr);
+            lock (non_primary_base_to_gchandle)
+            {
+                non_primary_base_to_gchandle.Remove(basePtr);
+            }
         }
 
 		internal static IntPtr MakeGCHandle (object managedWrapper)
@@ -227,13 +229,12 @@ namespace Mono.Cxxi {
 		//  (i.e. its vtable ptr is not in managed_vtptr_to_gchandle_offset)
 		internal static T ToManaged<T> (IntPtr native) where T : class
 		{
-			if (managed_vtptr_to_gchandle_offset == null)
-				return null;
-
 			int gchOffset;
-			if (!managed_vtptr_to_gchandle_offset.TryGetValue (Marshal.ReadIntPtr (native), out gchOffset))
-				return null;
-
+            lock (managed_vtptr_to_gchandle_offset)
+            {
+                if (!managed_vtptr_to_gchandle_offset.TryGetValue(Marshal.ReadIntPtr(native), out gchOffset))
+                    return null;
+            }
 			return ToManaged<T> (native, gchOffset);
 		}
 
@@ -242,8 +243,10 @@ namespace Mono.Cxxi {
 		internal static T ToManaged<T> (IntPtr native, int nativeSize) where T : class
 		{
             IntPtr handlePtr = IntPtr.Zero;
-            if (non_primary_base_to_gchandle != null)
+            lock (non_primary_base_to_gchandle)
+            {
                 non_primary_base_to_gchandle.TryGetValue(native, out handlePtr);
+            }
             
             if (handlePtr == IntPtr.Zero)
 			    handlePtr = Marshal.ReadIntPtr (native, nativeSize);
