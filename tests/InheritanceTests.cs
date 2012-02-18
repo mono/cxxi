@@ -62,8 +62,8 @@ namespace Tests {
 			Assert.AreEqual (9, ((MultiplierClassWithVirtualBase)cls).Number, "#4");
 
 			cls.MultiplierClassWithVirtualBase.Multiply (6);
-			Assert.AreEqual (30, cls.Number, "#5");
-			Assert.AreEqual (30, ((MultiplierClassWithVirtualBase)cls).Number, "#6");
+			Assert.AreEqual (54, cls.Number, "#5");
+            Assert.AreEqual (54, ((MultiplierClassWithVirtualBase)cls).Number, "#6");
 		}
 
 		[Test]

@@ -47,7 +47,7 @@ public:
 class EXPORT ClassWithVirtualBases : public AdderClassWithVirtualBase, public MultiplierClassWithVirtualBase {
 public:
 	// num is shared between AdderClass and MultiplierClass; Add and Multiply should both operate on n
-	ClassWithVirtualBases (int n) : NumberClass (n-2), AdderClassWithVirtualBase (n-1), MultiplierClassWithVirtualBase (n) {}
+	ClassWithVirtualBases (int n) : NumberClass (n), AdderClassWithVirtualBase (n-1), MultiplierClassWithVirtualBase (n-2) {}
 };
 
 
