@@ -39,6 +39,8 @@ namespace Mono.Cxxi {
 
 		private IntPtr ptr, native_vtptr;
 		private bool manage_memory;
+        private Dictionary<Type, IntPtr> base_vtables;
+        private Dictionary<Type, IntPtr> base_ptrs;
 
 		private static Dictionary<IntPtr,int> managed_vtptr_to_gchandle_offset = null;
 
@@ -52,6 +54,8 @@ namespace Mono.Cxxi {
 
 			// NOTE: native_vtptr will be set later after native ctor is called
 			native_vtptr = IntPtr.Zero;
+            base_vtables = new Dictionary<Type, IntPtr>();
+            base_ptrs = new Dictionary<Type, IntPtr>();
 
 			// zero memory for sanity
 			// FIXME: This should be an initblk
@@ -69,6 +73,8 @@ namespace Mono.Cxxi {
 		{
 			ptr = Marshal.AllocHGlobal (nativeSize);
 			native_vtptr = IntPtr.Zero;
+            base_vtables = new Dictionary<Type, IntPtr>();
+            base_ptrs = new Dictionary<Type, IntPtr>();
 			manage_memory = true;
 		}
 
@@ -78,6 +84,8 @@ namespace Mono.Cxxi {
 			// FIXME: On NET_4_0 use IntPtr.Add
 			ptr = new IntPtr (instance.Native.ToInt64 () + offset);
 			native_vtptr = IntPtr.Zero;
+            base_vtables = new Dictionary<Type, IntPtr>(instance.base_vtables);
+            base_ptrs = new Dictionary<Type, IntPtr>(instance.base_ptrs);
 			manage_memory = false;
 		}
 
@@ -89,6 +97,8 @@ namespace Mono.Cxxi {
 
 			ptr = native;
 			native_vtptr = IntPtr.Zero;
+            base_vtables = new Dictionary<Type, IntPtr>();
+            base_ptrs = new Dictionary<Type, IntPtr>();
 			manage_memory = false;
 		}
 
@@ -98,6 +108,8 @@ namespace Mono.Cxxi {
 			this.ptr = copy.ptr;
 			this.native_vtptr = copy.native_vtptr;
 			this.manage_memory = copy.manage_memory;
+            this.base_vtables = new Dictionary<Type, IntPtr>(copy.base_vtables);
+            this.base_ptrs = new Dictionary<Type, IntPtr>(copy.base_ptrs);
 		}
 
 		// Provide casts to/from IntPtr:
@@ -139,6 +151,36 @@ namespace Mono.Cxxi {
 				native_vtptr = value;
 			}
 		}
+
+        internal IntPtr GetNativeBaseVTable(Type t)
+        {
+            IntPtr value = IntPtr.Zero;
+            base_vtables.TryGetValue(t, out value);
+            return value;
+        }
+
+        internal void SetNativeBaseVTable(Type t, IntPtr ptr)
+        {
+            if (base_vtables.ContainsKey(t))
+                base_vtables[t] = ptr;
+            else
+                base_vtables.Add(t, ptr);
+        }
+
+        internal IntPtr GetNativeBasePointer(Type t)
+        {
+            IntPtr value = IntPtr.Zero;
+            base_ptrs.TryGetValue(t, out value);
+            return value;
+        }
+
+        internal void SetNativeBasePointer(Type t, IntPtr ptr)
+        {
+            if (base_ptrs.ContainsKey(t))
+                base_ptrs[t] = ptr;
+            else
+                base_ptrs.Add(t, ptr);
+        }
 
 		CppInstancePtr ICppObject.Native {
 			get { return this; }

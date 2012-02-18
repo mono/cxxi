@@ -33,6 +33,7 @@ using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
+using System.Linq;
 
 namespace Mono.Cxxi.Abi {
 
@@ -82,7 +83,9 @@ namespace Mono.Cxxi.Abi {
 		public virtual T GetVirtualCallDelegate<T> (CppInstancePtr instance, int index)
 			where T : class /*Delegate*/
 		{
-			var vtable = instance.NativeVTable;
+            var vtable = instance.GetNativeBaseVTable(this.TypeInfo.WrapperType);
+            if (vtable == IntPtr.Zero)
+                vtable = instance.NativeVTable;
 
 			var ftnptr = Marshal.ReadIntPtr (vtable, (index * EntrySize) + type_info.VTableTopPadding);
             if(ftnptr.ToInt32() < 0)
@@ -95,19 +98,39 @@ namespace Mono.Cxxi.Abi {
 			return del as T;
 		}
 
+        public virtual IEnumerable<CppTypeInfo> GetVirtualBases(CppTypeInfo type)
+        {
+            foreach (var sub in type.BaseClasses)
+            {
+                foreach (var virt in GetVirtualBases(sub))
+                    yield return virt;
+
+                if (VirtualBaseAttribute.IsVirtualBaseOf(type.WrapperType, sub.WrapperType))
+                    yield return sub;
+            }
+        }
+
+        public virtual void InitInstance(ref CppInstancePtr instance)
+        {
+            InitInstanceOffset(ref instance, true, 0);
+        }
+
 		// FIXME: Make this method unsafe.. it would probably be much faster
-		public virtual void InitInstance (ref CppInstancePtr instance)
+		public virtual void InitInstanceOffset(ref CppInstancePtr instance, bool isPrimary, int vtableOffset)
 		{
-			var basePtr = Marshal.ReadIntPtr (instance.Native);
+			var basePtr = Marshal.ReadIntPtr (instance.Native, vtableOffset);
 			Debug.Assert (basePtr != IntPtr.Zero);
 
 			if (basePtr == vtPtr)
 				return;
 
-			instance.NativeVTable = basePtr;
+            if (isPrimary)
+                instance.NativeVTable = basePtr;
+            else
+                instance.SetNativeBaseVTable(this.TypeInfo.WrapperType, basePtr);
 
-			if (!initialized) {
-
+			if (!initialized)
+            {
 				// FIXME: This could probably be a more efficient memcpy
 				for (int i = 0; i < type_info.VTableTopPadding; i++)
 					Marshal.WriteByte(vtPtr, i, Marshal.ReadByte(basePtr, i));
@@ -127,7 +150,26 @@ namespace Mono.Cxxi.Abi {
 				initialized = true;
 			}
 
-			Marshal.WriteIntPtr (instance.Native, vtPtr);
+            if (isPrimary)
+            {
+                int offset = this.TypeInfo.GCHandleOffset;
+                var duplicates = new List<Type>();
+                foreach (var vbase in GetVirtualBases(this.TypeInfo).Reverse().Distinct())
+                {
+                    // Prevent duplicates because all classes share the same virtual base
+                    if (!duplicates.Contains(vbase.WrapperType))
+                    {
+                        offset -= vbase.GCHandleOffset;
+                        vbase.VTable.InitInstanceOffset(ref instance, false, offset);
+                        duplicates.Add(vbase.WrapperType);
+
+                        // Put a pointer to this virtual base in our instance so we can find it
+                        instance.SetNativeBasePointer(vbase.WrapperType, new IntPtr(instance.Native.ToInt64() + offset));
+                    }
+                }
+            }
+
+            Marshal.WriteIntPtr(instance.Native, vtableOffset, vtPtr);
 		}
 
 		public virtual void ResetInstance (CppInstancePtr instance)

@@ -39,13 +39,12 @@ namespace Mono.Cxxi {
         public static bool IsVirtualBaseOf<T>(T instance, Type virtualBase)
             where T : class
         {
-            return IsVirtualBaseOf<T>(virtualBase);
+            return IsVirtualBaseOf(typeof(T), virtualBase);
         }
 
-        public static bool IsVirtualBaseOf<T>(Type virtualBase)
-            where T : class
+        public static bool IsVirtualBaseOf(Type parent, Type virtualBase)
         {
-            return typeof(T).GetCustomAttributes(typeof(VirtualBaseAttribute), false)
+            return parent.GetCustomAttributes(typeof(VirtualBaseAttribute), false)
                 .Cast<VirtualBaseAttribute>().Any(v => v.VirtualBaseType == virtualBase);
         }
     }

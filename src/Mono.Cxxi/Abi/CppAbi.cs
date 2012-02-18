@@ -53,6 +53,7 @@ namespace Mono.Cxxi.Abi {
 		protected static readonly MethodInfo typeinfo_nativesize   = typeof (CppTypeInfo).GetProperty ("NativeSize").GetGetMethod ();
 		protected static readonly MethodInfo typeinfo_vtable       = typeof (CppTypeInfo).GetProperty ("VTable").GetGetMethod ();
 		protected static readonly MethodInfo typeinfo_adjvcall     = typeof (CppTypeInfo).GetMethod ("GetAdjustedVirtualCall");
+		protected static readonly MethodInfo typeinfo_adjnative    = typeof (CppTypeInfo).GetMethod ("GetNativeVirtualPointer");
 		protected static readonly MethodInfo typeinfo_fieldoffset  = typeof (CppTypeInfo).GetProperty ("FieldOffsetPadding").GetGetMethod ();
 		protected static readonly MethodInfo vtable_initinstance   = typeof (VTable).GetMethod ("InitInstance");
 		protected static readonly MethodInfo vtable_resetinstance  = typeof (VTable).GetMethod ("ResetInstance");
@@ -250,6 +251,7 @@ namespace Mono.Cxxi.Abi {
 			}
 
 			var isStatic = IsStatic (interfaceMethod);
+            var isVirtual = IsVirtual(interfaceMethod);
 			LocalBuilder cppInstancePtr = null;
 			LocalBuilder nativePtr = null;
 
@@ -260,7 +262,7 @@ namespace Mono.Cxxi.Abi {
 					throw new ArgumentException ("First argument to non-static C++ method must be instance pointer.");
 
 				// 2. Load the native C++ instance pointer
-				EmitLoadInstancePtr (il, interfaceMethod.GetParameters () [0].ParameterType, out cppInstancePtr, out nativePtr);
+                EmitLoadInstancePtr(il, typeInfo, isVirtual, interfaceMethod.GetParameters()[0].ParameterType, out cppInstancePtr, out nativePtr);
 
 				// 3. Make sure our native pointer is a valid reference. If not, throw ObjectDisposedException
 				EmitCheckDisposed (il, nativePtr, psig.Type);
@@ -268,10 +270,10 @@ namespace Mono.Cxxi.Abi {
 
 			MethodInfo nativeMethod;
 
-			if (IsVirtual (interfaceMethod) && psig.Type != MethodType.NativeDtor) {
+			if (isVirtual && psig.Type != MethodType.NativeDtor) {
 				nativeMethod = EmitPrepareVirtualCall (typeInfo, cppInstancePtr, vtableIndex++);
 			} else {
-				if (IsVirtual (interfaceMethod))
+                if (isVirtual)
 					vtableIndex++;
 
 				nativeMethod = GetPInvokeForMethod (typeInfo, psig);
@@ -913,8 +915,8 @@ namespace Mono.Cxxi.Abi {
 			il.MarkLabel (dontPushOrThrow);
 		}
 
-		protected virtual void EmitLoadInstancePtr (ILGenerator il, Type firstParamType, out LocalBuilder cppip,
-		                                            out LocalBuilder native)
+        protected virtual void EmitLoadInstancePtr(ILGenerator il, CppTypeInfo typeInfo, bool isVirtual, Type firstParamType,
+            out LocalBuilder cppip, out LocalBuilder native)
 		{
 			cppip = null;
 			native = null;
@@ -927,6 +929,23 @@ namespace Mono.Cxxi.Abi {
 				il.Emit (OpCodes.Ldloca_S, cppip);
 				il.Emit (OpCodes.Call, cppip_native);
 				il.Emit (OpCodes.Stloc_S, native);
+                
+				// NOTE: Feel free to make this more efficient as I obviously suck at IL.Emit
+                // If this is a virtual call then we may be calling a method on a virtual base
+                // So we need to use our method to get a pointer to the virtual base instead
+                // If the class isn't a virtual base then it will simply return the same pointer
+                if (isVirtual)
+                {
+                    il.Emit(OpCodes.Ldarg_0);
+                    il.Emit(OpCodes.Ldfld, typeInfo.emit_info.typeinfo_field);
+                    il.Emit(OpCodes.Ldloc_S, cppip);
+                    il.Emit(OpCodes.Callvirt, typeinfo_adjnative);
+                    il.Emit(OpCodes.Stloc_S, cppip);
+                    il.Emit(OpCodes.Ldloca_S, cppip);
+                    il.Emit(OpCodes.Call, cppip_native);
+                    il.Emit(OpCodes.Stloc_S, native);
+                }
+
 			} else if (firstParamType.Equals (typeof (IntPtr))) {
 				native = il.DeclareLocal (typeof (IntPtr));
 				il.Emit (OpCodes.Stloc_S, native);

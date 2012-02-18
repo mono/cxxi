@@ -181,51 +181,56 @@ namespace Mono.Cxxi {
 
 			var baseVMethodCount = baseType.virtual_methods.Count;
 			baseType = baseType.Clone ();
+            
+            // Don't add virtual methods of virtual bases because they're kept in their own VTable
+            if (!VirtualBaseAttribute.IsVirtualBaseOf(this.WrapperType, baseType.WrapperType))
+            {
+                switch (location)
+                {
 
-			switch (location) {
+                    case BaseVirtualMethods.PrependPrimary:
 
-			case BaseVirtualMethods.PrependPrimary:
+                        for (int i = 0; i < baseVMethodCount; i++)
+                            virtual_methods.Insert(BaseVTableSlots + i, baseType.virtual_methods[i]);
 
-				for (int i = 0; i < baseVMethodCount; i++)
-					virtual_methods.Insert (BaseVTableSlots + i, baseType.virtual_methods [i]);
+                        gchandle_offset_delta = baseType.gchandle_offset_delta;
 
-				gchandle_offset_delta = baseType.gchandle_offset_delta;
+                        BaseVTableSlots += baseVMethodCount;
+                        vt_delegate_types.Add(baseVMethodCount);
+                        vt_overrides.Add(baseVMethodCount);
+                        break;
 
-				BaseVTableSlots += baseVMethodCount;
-				vt_delegate_types.Add (baseVMethodCount);
-				vt_overrides.Add (baseVMethodCount);
-				break;
+                    case BaseVirtualMethods.AppendPrimary:
 
-			case BaseVirtualMethods.AppendPrimary:
+                        for (int i = 0; i < baseVMethodCount; i++)
+                            virtual_methods.Add(baseType.virtual_methods[i]);
 
-				for (int i = 0; i < baseVMethodCount; i++)
-					virtual_methods.Add (baseType.virtual_methods [i]);
+                        gchandle_offset_delta = baseType.gchandle_offset_delta;
 
-				gchandle_offset_delta = baseType.gchandle_offset_delta;
+                        vt_delegate_types.Add(baseVMethodCount);
+                        vt_overrides.Add(baseVMethodCount);
+                        break;
 
-				vt_delegate_types.Add (baseVMethodCount);
-				vt_overrides.Add (baseVMethodCount);
-				break;
+                    case BaseVirtualMethods.NewVTable:
 
-			case BaseVirtualMethods.NewVTable:
+                        baseType.IsPrimaryBase = (base_classes.Count == 0);
 
-				baseType.IsPrimaryBase = (base_classes.Count == 0);
+                        // offset all previously added bases
+                        foreach (var previousBase in base_classes)
+                            previousBase.gchandle_offset_delta += baseType.NativeSize;
 
-				// offset all previously added bases
-				foreach (var previousBase in base_classes)
-					previousBase.gchandle_offset_delta += baseType.NativeSize;
+                        // offset derived (this) type's gchandle
+                        gchandle_offset_delta += baseType.GCHandleOffset;
 
-				// offset derived (this) type's gchandle
-				gchandle_offset_delta += baseType.GCHandleOffset;
+                        baseType.gchandle_offset_delta += native_size_without_padding + CountBases(b => !b.IsPrimaryBase) * IntPtr.Size;
 
-				baseType.gchandle_offset_delta += native_size_without_padding + CountBases (b => !b.IsPrimaryBase) * IntPtr.Size;
-
-				// ensure managed override tramps will be regenerated with correct gchandle offset
-				baseType.vt_overrides = new LazyGeneratedList<Delegate> (baseType.virtual_methods.Count, i => Library.Abi.GetManagedOverrideTrampoline (baseType, i));
-				baseType.VTableOverrides = new ReadOnlyCollection<Delegate> (baseType.vt_overrides);
-				baseType.lazy_vtable = null;
-				break;
-			}
+                        // ensure managed override tramps will be regenerated with correct gchandle offset
+                        baseType.vt_overrides = new LazyGeneratedList<Delegate>(baseType.virtual_methods.Count, i => Library.Abi.GetManagedOverrideTrampoline(baseType, i));
+                        baseType.VTableOverrides = new ReadOnlyCollection<Delegate>(baseType.vt_overrides);
+                        baseType.lazy_vtable = null;
+                        break;
+                }
+            }
 
 			base_classes.Add (baseType);
 
@@ -307,7 +312,7 @@ namespace Mono.Cxxi {
 
 			if (offset > 0 && instance.Native.IsManagedAlloc && baseTypeInfo.HasVTable) {
 				// we might need to paste the managed base-in-derived vtptr here --also inits native_vtptr
-				baseTypeInfo.VTable.InitInstance (ref result);
+                baseTypeInfo.VTable.InitInstanceOffset(ref result, false, 0);
 			}
 
 			return result;
@@ -333,7 +338,10 @@ namespace Mono.Cxxi {
 			int offset;
 			var baseTypeInfo = GetCastInfo (derived.GetType (), baseType, out offset);
 
-			Marshal.WriteIntPtr (baseInDerived.Native.Native, baseTypeInfo.GCHandleOffset, CppInstancePtr.MakeGCHandle (baseInDerived));
+            // TODO: Do we ever really want this?
+            // Do we need to allocate NativeSize + IntPtr.Size for each non-primary base?
+            if (baseInDerived.Native.IsManagedAlloc)
+			    Marshal.WriteIntPtr (baseInDerived.Native.Native, baseTypeInfo.GCHandleOffset, CppInstancePtr.MakeGCHandle (baseInDerived));
 		}
 
 		#endregion
@@ -366,6 +374,17 @@ namespace Mono.Cxxi {
 		public virtual int VTableBottomPadding {
 			get { return 0; }
 		}
+
+        public virtual CppInstancePtr GetNativeVirtualPointer(CppInstancePtr instance)
+        {
+            // Determine if we should return a pointer to a virtual base or not
+            var ptr = instance.GetNativeBasePointer(this.WrapperType);
+            if (ptr == IntPtr.Zero)
+                return instance;
+
+            // Return a new instance pointer offset to the correct location
+            return new CppInstancePtr(instance, (int)(ptr.ToInt64() - instance.Native.ToInt64()));
+        }
 
 		public virtual T GetAdjustedVirtualCall<T> (CppInstancePtr instance, int derivedVirtualMethodIndex)
 			where T : class /* Delegate */
