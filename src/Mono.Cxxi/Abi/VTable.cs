@@ -124,7 +124,10 @@ namespace Mono.Cxxi.Abi {
 			if (basePtr == vtPtr)
 				return;
 
-            if (isPrimary)
+            // If this is the primary class or if this is not a managed alloc
+            // then update the main vtable 
+            // This basically means derived classes and non primary base classes
+            if (isPrimary || !instance.IsManagedAlloc)
                 instance.NativeVTable = basePtr;
             else
                 instance.SetNativeBaseVTable(this.TypeInfo.WrapperType, basePtr);

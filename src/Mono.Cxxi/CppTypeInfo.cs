@@ -313,6 +313,9 @@ namespace Mono.Cxxi {
 			if (offset > 0 && instance.Native.IsManagedAlloc && baseTypeInfo.HasVTable) {
 				// we might need to paste the managed base-in-derived vtptr here --also inits native_vtptr
                 baseTypeInfo.VTable.InitInstanceOffset(ref result, false, 0);
+
+                // Make sure we update the vtable location in the original instance as well
+                instance.Native.SetNativeBaseVTable(baseTypeInfo.WrapperType, result.NativeVTable);
 			}
 
 			return result;
@@ -337,11 +340,8 @@ namespace Mono.Cxxi {
 		{
 			int offset;
 			var baseTypeInfo = GetCastInfo (derived.GetType (), baseType, out offset);
-
-            // TODO: Do we ever really want this?
-            // Do we need to allocate NativeSize + IntPtr.Size for each non-primary base?
-            if (baseInDerived.Native.IsManagedAlloc)
-			    Marshal.WriteIntPtr (baseInDerived.Native.Native, baseTypeInfo.GCHandleOffset, CppInstancePtr.MakeGCHandle (baseInDerived));
+            CppInstancePtr.RegisterNonPrimaryBase(baseInDerived.Native.Native,
+                CppInstancePtr.MakeGCHandle (baseInDerived));
 		}
 
 		#endregion

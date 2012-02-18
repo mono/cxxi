@@ -43,6 +43,7 @@ namespace Mono.Cxxi {
         private Dictionary<Type, IntPtr> base_ptrs;
 
 		private static Dictionary<IntPtr,int> managed_vtptr_to_gchandle_offset = null;
+        private static Dictionary<IntPtr, IntPtr> non_primary_base_to_gchandle = null;
 
 		// Alloc a new C++ instance
 		internal CppInstancePtr (CppTypeInfo typeInfo, object managedWrapper)
@@ -198,6 +199,22 @@ namespace Mono.Cxxi {
 			managed_vtptr_to_gchandle_offset [vtable.Pointer] = vtable.TypeInfo.GCHandleOffset;
 		}
 
+        internal static void RegisterNonPrimaryBase(IntPtr basePtr, IntPtr gcHandle)
+        {
+            if (non_primary_base_to_gchandle == null)
+                non_primary_base_to_gchandle = new Dictionary<IntPtr, IntPtr>();
+
+            non_primary_base_to_gchandle[basePtr] = gcHandle;
+        }
+
+        internal static void UnregisterNonPrimaryBase(IntPtr basePtr)
+        {
+            if (non_primary_base_to_gchandle == null)
+                return;
+
+            non_primary_base_to_gchandle.Remove(basePtr);
+        }
+
 		internal static IntPtr MakeGCHandle (object managedWrapper)
 		{
 			// TODO: Dispose() should probably be called at some point on this GCHandle.
@@ -224,15 +241,23 @@ namespace Mono.Cxxi {
 		// if we do not KNOW that this instance is managed.
 		internal static T ToManaged<T> (IntPtr native, int nativeSize) where T : class
 		{
-			IntPtr handlePtr = Marshal.ReadIntPtr (native, nativeSize);
-			GCHandle handle = GCHandle.FromIntPtr (handlePtr);
+            IntPtr handlePtr = IntPtr.Zero;
+            if (non_primary_base_to_gchandle != null)
+                non_primary_base_to_gchandle.TryGetValue(native, out handlePtr);
+            
+            if (handlePtr == IntPtr.Zero)
+			    handlePtr = Marshal.ReadIntPtr (native, nativeSize);
 
+			GCHandle handle = GCHandle.FromIntPtr (handlePtr);
 			return handle.Target as T;
 		}
 
 		// TODO: Free GCHandle?
 		public void Dispose ()
 		{
+            // Remove the link between the base class and the GCHandle pointer
+            UnregisterNonPrimaryBase(this.Native);
+
 			if (manage_memory && ptr != IntPtr.Zero)
 				Marshal.FreeHGlobal (ptr);
 
