@@ -14,8 +14,9 @@ SET NUNIT_CONSOLE=%NUNIT_DIR%tools\nunit-console-x86.exe
 SET REFERENCES=-r:%NUNIT_FRAMEWORK% -r:%INTEROP_DLL%
 
 
-SET GCCXML=gccxml.exe
-
+SET GCCXML=%ProgramFiles%\gccxml 0.9\bin\gccxml.exe
+IF NOT EXIST "%GCCXML%" SET GCCXML=%ProgramFiles(x86)%\gccxml 0.9\bin\gccxml.exe
+IF NOT EXIST "%GCCXML%" SET GCCXML=gccxml.exe
 
 
 
@@ -60,7 +61,7 @@ goto :eof
 	SET NAME=%1
 	echo.
 	echo Generating %NAME%
-	%GCCXML% -fxml=%NAME%.xml Native\%NAME%.h
+	"%GCCXML%" -fxml=%NAME%.xml Native\%NAME%.h
 	%BUILD_DIR%generator.exe -o=generated -ns=Tests -lib=libtest -inline=present -abi=msvc %NAME%.xml
 	del /q %NAME%.xml
 	endlocal
@@ -71,7 +72,7 @@ goto :eof
 	SET LAYOUT_OPTIONS=/d1reportAllClassLayout
 	SET LAYOUT_OPTIONS=/d1reportSingleClassLayout%CLASSES: = /d1reportSingleClassLayout%
 	
-	cl /nologo /Fe%BUILD_DIR%libtest.dll /LD %CPPFILES% %LAYOUT_OPTIONS% > VSClassLayouts.txt
+	cl /nologo /Fe%BUILD_DIR%libtest.dll /Zi /Fd%BUILD_DIR%libtest.pdb /LDd %CPPFILES% %LAYOUT_OPTIONS% > VSClassLayouts.txt
 goto :eof
 
 :test_dll
