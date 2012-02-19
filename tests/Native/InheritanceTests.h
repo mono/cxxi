@@ -26,6 +26,11 @@ public:
 	AdderClassWithVirtualBase (int n);
 	virtual void Add (int n);
 };
+class EXPORT AdderClassWithVirtualBaseNoVirtualMethods : public virtual NumberClass {
+public:
+	AdderClassWithVirtualBaseNoVirtualMethods (int n) : NumberClass(n) {}
+	void Add (int n) { NumberClass::num += n; }
+};
 
 class EXPORT MultiplierClass : public NumberClass {
 public:

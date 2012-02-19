@@ -22,17 +22,27 @@ namespace Tests {
 
 			cls.Add (2);
 			Assert.AreEqual (10, ((NumberClass)cls).Number, "#2");
-		}
+        }
 
-		[Test]
-		public void TestVirtualCallOnVirtualBaseClass ()
-		{
-			var cls = new AdderClassWithVirtualBase (8);
-			Assert.AreEqual (8, cls.Number, "#1");
+        [Test]
+        public void TestVirtualCallOnVirtualBaseClass()
+        {
+            var cls = new AdderClassWithVirtualBase(8);
+            Assert.AreEqual(8, cls.Number, "#1");
 
-			cls.Add (2);
-			Assert.AreEqual (10, ((NumberClass)cls).Number, "#2");
-		}
+            cls.Add(2);
+            Assert.AreEqual(10, ((NumberClass)cls).Number, "#2");
+        }
+
+        [Test]
+        public void TestNonVirtualCallOnVirtualBaseClass()
+        {
+            var cls = new AdderClassWithVirtualBaseNoVirtualMethods(8);
+            Assert.AreEqual(8, cls.Number, "#1");
+
+            cls.Add(2);
+            Assert.AreEqual(10, ((NumberClass)cls).Number, "#2");
+        }
 
 		[Test]
 		public void TestMultipleBases ()
