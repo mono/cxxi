@@ -44,8 +44,6 @@ namespace Mono.Cxxi {
 
 		private static Dictionary<IntPtr,int> managed_vtptr_to_gchandle_offset = 
             new Dictionary<IntPtr,int>();
-        private static Dictionary<IntPtr, IntPtr> non_primary_base_to_gchandle = 
-            new Dictionary<IntPtr,IntPtr>();
 
 		// Alloc a new C++ instance
 		internal CppInstancePtr (CppTypeInfo typeInfo, object managedWrapper)
@@ -201,22 +199,6 @@ namespace Mono.Cxxi {
             }
 		}
 
-        internal static void RegisterNonPrimaryBase(IntPtr basePtr, IntPtr gcHandle)
-        {
-            lock (non_primary_base_to_gchandle)
-            {
-                non_primary_base_to_gchandle[basePtr] = gcHandle;
-            }
-        }
-
-        internal static void UnregisterNonPrimaryBase(IntPtr basePtr)
-        {
-            lock (non_primary_base_to_gchandle)
-            {
-                non_primary_base_to_gchandle.Remove(basePtr);
-            }
-        }
-
 		internal static IntPtr MakeGCHandle (object managedWrapper)
 		{
 			// TODO: Dispose() should probably be called at some point on this GCHandle.
@@ -242,15 +224,7 @@ namespace Mono.Cxxi {
 		// if we do not KNOW that this instance is managed.
 		internal static T ToManaged<T> (IntPtr native, int nativeSize) where T : class
 		{
-            IntPtr handlePtr = IntPtr.Zero;
-            lock (non_primary_base_to_gchandle)
-            {
-                non_primary_base_to_gchandle.TryGetValue(native, out handlePtr);
-            }
-            
-            if (handlePtr == IntPtr.Zero)
-			    handlePtr = Marshal.ReadIntPtr (native, nativeSize);
-
+            IntPtr handlePtr = Marshal.ReadIntPtr (native, nativeSize);
 			GCHandle handle = GCHandle.FromIntPtr (handlePtr);
 			return handle.Target as T;
 		}
@@ -258,9 +232,6 @@ namespace Mono.Cxxi {
 		// TODO: Free GCHandle?
 		public void Dispose ()
 		{
-            // Remove the link between the base class and the GCHandle pointer
-            UnregisterNonPrimaryBase(this.Native);
-
 			if (manage_memory && ptr != IntPtr.Zero)
 				Marshal.FreeHGlobal (ptr);
 

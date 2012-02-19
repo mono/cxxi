@@ -61,6 +61,7 @@ namespace Mono.Cxxi {
 
 		public string TypeName { get; private set; }
 		public bool IsPrimaryBase { get; protected set; } // < True by default. set to False in cases where it is cloned as a non-primary base
+        public bool IsFinalClass { get; protected set; } // < True by default. set to False when added as a base class of another class
 
 		// returns the number of vtable slots reserved for the
 		//  base class(es) before this class's virtual methods start
@@ -128,6 +129,7 @@ namespace Mono.Cxxi {
 			field_offset_padding_without_vtptr = 0;
 			gchandle_offset_delta = 0;
 			IsPrimaryBase = true;
+            IsFinalClass = true;
 			BaseVTableSlots = 0;
 			lazy_vtable = null;
 
@@ -153,7 +155,9 @@ namespace Mono.Cxxi {
 		// the extra padding to allocate at the top of the class before the fields begin
 		//  (by default, just the vtable pointer)
 		public virtual int FieldOffsetPadding {
-			get { return field_offset_padding_without_vtptr + (virtual_methods.Count != 0? IntPtr.Size : 0); }
+			get { return field_offset_padding_without_vtptr +
+                (this.HasVFTable ? IntPtr.Size : 0) +
+                (this.HasVBTable ? IntPtr.Size : 0); }
 		}
 
 		public virtual int NativeSize {
@@ -181,9 +185,19 @@ namespace Mono.Cxxi {
 
 			var baseVMethodCount = baseType.virtual_methods.Count;
 			baseType = baseType.Clone ();
-            
+            baseType.IsFinalClass = false;
+
+            // Since the class completes before getting added to the parent
+            // We need to remove the size we added for any virtual bases
+            foreach (var virt in baseType.GetVirtualBasesDistinct())
+            {
+                baseType.field_offset_padding_without_vtptr -= virt.native_size_without_padding +
+                    virt.FieldOffsetPadding;
+            }
+
             // Don't add virtual methods of virtual bases because they're kept in their own VTable
-            if (!VirtualBaseAttribute.IsVirtualBaseOf(this.WrapperType, baseType.WrapperType))
+            bool isVirtualBase = VirtualBaseAttribute.IsVirtualBaseOf(this.WrapperType, baseType.WrapperType);
+            if (!isVirtualBase)
             {
                 switch (location)
                 {
@@ -220,9 +234,9 @@ namespace Mono.Cxxi {
                             previousBase.gchandle_offset_delta += baseType.NativeSize;
 
                         // offset derived (this) type's gchandle
-                        gchandle_offset_delta += baseType.GCHandleOffset;
+                        gchandle_offset_delta += baseType.gchandle_offset_delta + IntPtr.Size;
 
-                        baseType.gchandle_offset_delta += native_size_without_padding + CountBases(b => !b.IsPrimaryBase) * IntPtr.Size;
+                        baseType.gchandle_offset_delta += CountBases(b => !b.IsPrimaryBase) * IntPtr.Size;
 
                         // ensure managed override tramps will be regenerated with correct gchandle offset
                         baseType.vt_overrides = new LazyGeneratedList<Delegate>(baseType.virtual_methods.Count, i => Library.Abi.GetManagedOverrideTrampoline(baseType, i));
@@ -230,12 +244,14 @@ namespace Mono.Cxxi {
                         baseType.lazy_vtable = null;
                         break;
                 }
+
+                field_offset_padding_without_vtptr += baseType.native_size_without_padding +
+                    (location == BaseVirtualMethods.NewVTable ?
+                    baseType.FieldOffsetPadding : baseType.field_offset_padding_without_vtptr +
+                    (baseType.HasVBTable ? IntPtr.Size : 0));
             }
 
 			base_classes.Add (baseType);
-
-			field_offset_padding_without_vtptr += baseType.native_size_without_padding +
-				(location == BaseVirtualMethods.NewVTable? baseType.FieldOffsetPadding : baseType.field_offset_padding_without_vtptr);
 		}
 
 		public virtual void CompleteType ()
@@ -245,6 +261,46 @@ namespace Mono.Cxxi {
 
 			foreach (var baseClass in base_classes)
 				baseClass.CompleteType ();
+
+            // Update the offsets for virtual base classes
+            if (this.IsFinalClass)
+            {
+                // TODO: This GCHandleOffset stuff probably needs a bit of work
+                // I think the GCHandleOffset is typically only used on the final class
+                // and for non primary base classes in which case the offsets should be right
+                // However, I wouldn't trust the values for any other types
+
+                int offset = 0;
+                var virtDict = new Dictionary<Type, int>();
+                foreach (var virt in this.GetVirtualBases().Reverse())
+                {
+                    // If we've already seen this type then use the offset from before
+                    if (virtDict.ContainsKey(virt.WrapperType))
+                    {
+                        virt.gchandle_offset_delta = virtDict[virt.WrapperType];
+                        continue;
+                    }
+
+                    virtDict.Add(virt.WrapperType, offset);
+                    virt.gchandle_offset_delta = offset;
+                    offset += virt.NativeSize;
+                    this.field_offset_padding_without_vtptr += virt.native_size_without_padding +
+                        virt.FieldOffsetPadding;
+                }
+
+                // If we have any virtual bases then we need to offset by their sizes
+                if (virtDict.Count > 0)
+                {
+                    EachBase((b) =>
+                        {
+                            // Don't offset any of our virtual bases because they're already done
+                            if (virtDict.ContainsKey(b.WrapperType))
+                                return;
+
+                            b.gchandle_offset_delta += offset;
+                        });
+                }
+            }
 
 			emit_info = null;
 
@@ -257,6 +313,15 @@ namespace Mono.Cxxi {
 			mangleType.ElementTypeName = TypeName;
 			return mangleType;
 		}
+
+        public void EachBase (Action<CppTypeInfo> predicate)
+        {
+            foreach (var b in base_classes)
+            {
+                b.EachBase(predicate);
+                predicate(b);
+            }
+        }
 
 		public int CountBases (Func<CppTypeInfo, bool> predicate)
 		{
@@ -340,13 +405,24 @@ namespace Mono.Cxxi {
 		{
 			int offset;
 			var baseTypeInfo = GetCastInfo (derived.GetType (), baseType, out offset);
-            CppInstancePtr.RegisterNonPrimaryBase(baseInDerived.Native.Native,
-                CppInstancePtr.MakeGCHandle (baseInDerived));
+            Marshal.WriteIntPtr(baseInDerived.Native.Native, baseTypeInfo.GCHandleOffset, CppInstancePtr.MakeGCHandle(baseInDerived));
 		}
 
 		#endregion
 
 		#region V-Table
+
+        public virtual bool HasVFTable
+        {
+            get { return VirtualMethods.Any(
+                m => !m.OrigMethod.IsDefined(typeof(ArtificialAttribute), false)); }
+        }
+
+        public virtual bool HasVBTable
+        {
+            get { return this.BaseClasses.Any(
+                c => VirtualBaseAttribute.IsVirtualBaseOf(this.WrapperType, c.WrapperType)); }
+        }
 
 		public virtual bool HasVTable {
 			get { return VirtualMethods.Any (); }
@@ -374,6 +450,31 @@ namespace Mono.Cxxi {
 		public virtual int VTableBottomPadding {
 			get { return 0; }
 		}
+
+        public virtual IEnumerable<CppTypeInfo> GetVirtualBasesDistinct()
+        {
+            var unique = new List<Type>();
+            foreach (var b in this.GetVirtualBases())
+            {
+                if (unique.Contains(b.WrapperType))
+                    continue;
+
+                yield return b;
+                unique.Add(b.WrapperType);
+            }
+        }
+
+        public virtual IEnumerable<CppTypeInfo> GetVirtualBases()
+        {
+            foreach (var sub in BaseClasses)
+            {
+                foreach (var virt in sub.GetVirtualBases())
+                    yield return virt;
+
+                if (VirtualBaseAttribute.IsVirtualBaseOf(WrapperType, sub.WrapperType))
+                    yield return sub;
+            }
+        }
 
         public virtual CppInstancePtr GetNativeVirtualPointer(CppInstancePtr instance)
         {

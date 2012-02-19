@@ -98,18 +98,6 @@ namespace Mono.Cxxi.Abi {
 			return del as T;
 		}
 
-        public virtual IEnumerable<CppTypeInfo> GetVirtualBases(CppTypeInfo type)
-        {
-            foreach (var sub in type.BaseClasses)
-            {
-                foreach (var virt in GetVirtualBases(sub))
-                    yield return virt;
-
-                if (VirtualBaseAttribute.IsVirtualBaseOf(type.WrapperType, sub.WrapperType))
-                    yield return sub;
-            }
-        }
-
         public virtual void InitInstance(ref CppInstancePtr instance)
         {
             InitInstanceOffset(ref instance, true, 0);
@@ -118,66 +106,67 @@ namespace Mono.Cxxi.Abi {
 		// FIXME: Make this method unsafe.. it would probably be much faster
 		public virtual void InitInstanceOffset(ref CppInstancePtr instance, bool isPrimary, int vtableOffset)
 		{
-			var basePtr = Marshal.ReadIntPtr (instance.Native, vtableOffset);
-			Debug.Assert (basePtr != IntPtr.Zero);
-
-			if (basePtr == vtPtr)
-				return;
-
-            // If this is the primary class or if this is not a managed alloc
-            // then update the main vtable 
-            // This basically means derived classes and non primary base classes
-            if (isPrimary || !instance.IsManagedAlloc)
-                instance.NativeVTable = basePtr;
-            else
-                instance.SetNativeBaseVTable(this.TypeInfo.WrapperType, basePtr);
-
-			if (!initialized)
+            if (this.TypeInfo.HasVFTable)
             {
-				// FIXME: This could probably be a more efficient memcpy
-				for (int i = 0; i < type_info.VTableTopPadding; i++)
-					Marshal.WriteByte(vtPtr, i, Marshal.ReadByte(basePtr, i));
+                var basePtr = Marshal.ReadIntPtr(instance.Native, vtableOffset);
+                Debug.Assert(basePtr != IntPtr.Zero);
 
-				int currentOffset = type_info.VTableTopPadding;
-				for (int i = 0; i < EntryCount; i++) {
-					if (Marshal.ReadIntPtr (vtPtr, currentOffset) == IntPtr.Zero)
-						Marshal.WriteIntPtr (vtPtr, currentOffset, Marshal.ReadIntPtr (basePtr, currentOffset));
+                if (basePtr == vtPtr)
+                    return;
 
-					currentOffset += EntrySize;
-				}
+                // If this is the primary class or if this is not a managed alloc
+                // then update the main vtable 
+                // This basically means derived classes and non primary base classes
+                if (isPrimary || !instance.IsManagedAlloc)
+                    instance.NativeVTable = basePtr;
+                else
+                    instance.SetNativeBaseVTable(this.TypeInfo.WrapperType, basePtr);
 
-				// FIXME: This could probably be a more efficient memcpy
-				for (int i = 0; i < type_info.VTableBottomPadding; i++)
-					Marshal.WriteByte(vtPtr, currentOffset + i, Marshal.ReadByte(basePtr, currentOffset + i));
-
-				initialized = true;
-			}
-
-            if (isPrimary)
-            {
-                int offset = this.TypeInfo.GCHandleOffset;
-                var duplicates = new List<Type>();
-                foreach (var vbase in GetVirtualBases(this.TypeInfo).Reverse().Distinct())
+                if (!initialized)
                 {
-                    // Prevent duplicates because all classes share the same virtual base
-                    if (!duplicates.Contains(vbase.WrapperType))
-                    {
-                        offset -= vbase.GCHandleOffset;
-                        vbase.VTable.InitInstanceOffset(ref instance, false, offset);
-                        duplicates.Add(vbase.WrapperType);
+                    // FIXME: This could probably be a more efficient memcpy
+                    for (int i = 0; i < type_info.VTableTopPadding; i++)
+                        Marshal.WriteByte(vtPtr, i, Marshal.ReadByte(basePtr, i));
 
-                        // Put a pointer to this virtual base in our instance so we can find it
-                        instance.SetNativeBasePointer(vbase.WrapperType, new IntPtr(instance.Native.ToInt64() + offset));
+                    int currentOffset = type_info.VTableTopPadding;
+                    for (int i = 0; i < EntryCount; i++)
+                    {
+                        if (Marshal.ReadIntPtr(vtPtr, currentOffset) == IntPtr.Zero)
+                            Marshal.WriteIntPtr(vtPtr, currentOffset, Marshal.ReadIntPtr(basePtr, currentOffset));
+
+                        currentOffset += EntrySize;
                     }
+
+                    // FIXME: This could probably be a more efficient memcpy
+                    for (int i = 0; i < type_info.VTableBottomPadding; i++)
+                        Marshal.WriteByte(vtPtr, currentOffset + i, Marshal.ReadByte(basePtr, currentOffset + i));
+
+                    initialized = true;
                 }
+
+                Marshal.WriteIntPtr(instance.Native, vtableOffset, vtPtr);
             }
 
-            Marshal.WriteIntPtr(instance.Native, vtableOffset, vtPtr);
+            // TODO: I should probably be looking up the offsets via the vbtable rather than this
+            if (isPrimary)
+            {
+                int offset = this.TypeInfo.NativeSize;
+                foreach (var vbase in this.TypeInfo.GetVirtualBasesDistinct().Reverse())
+                {
+                    offset -= vbase.NativeSize;
+                    vbase.VTable.InitInstanceOffset(ref instance, false, offset);
+             
+                    // Put a pointer to this virtual base in our instance so we can find it
+                    instance.SetNativeBasePointer(vbase.WrapperType, new IntPtr(instance.Native.ToInt64() + offset));
+                }
+            }
 		}
 
 		public virtual void ResetInstance (CppInstancePtr instance)
 		{
-			Marshal.WriteIntPtr (instance.Native, instance.NativeVTable);
+            // TODO: Should we reset the virtual base vftables as well?
+            if (this.TypeInfo.HasVFTable)
+			    Marshal.WriteIntPtr (instance.Native, instance.NativeVTable);
 		}
 
 		public CppTypeInfo TypeInfo {
