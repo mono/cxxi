@@ -53,6 +53,7 @@ FILES =  \
 	Abi/VTable.cs \
 	AssemblyInfo.cs \
 	Attributes.cs \
+	ByReference.cs \
 	CppField.cs \
 	CppInstancePtr.cs \
 	CppLibrary.cs \
