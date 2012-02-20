@@ -287,7 +287,21 @@ if (!Nested) {
             #line hidden
             
             #line 35 "/Users/alex/OpenSource/cppinterop/src/generator/Templates/CSharp/CSharpClass.tt"
- } 
+ }
+
+ this.Write(string.Format(@"
+		public static bool operator!=({0} a, {0} b) {{ return !(a == b); }}
+		public static bool operator==({0} a, {0} b)
+		{{
+            if (object.ReferenceEquals(a, b))
+                return true;
+            if ((object)a == null || (object)b == null)
+                return false;
+			return a.Native == b.Native;
+		}}
+        public override bool Equals(object obj) {{ return (this == obj as {0}); }}
+        public override int GetHashCode() {{ return this.Native.GetHashCode(); }}
+", wrapper));
             
             #line default
             #line hidden

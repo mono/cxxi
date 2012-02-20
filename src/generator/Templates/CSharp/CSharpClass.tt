@@ -33,6 +33,17 @@ namespace <#= @namespace #> {
 <# if (!hasBase) { #>
 		public CppInstancePtr Native { get; protected set; }
 <# } #>
+		public static bool operator!=(<#= wrapper #> a, <#= wrapper #> b) { return !(a == b); }
+		public static bool operator==(<#= wrapper #> a, <#= wrapper #> b)
+		{
+			if (object.ReferenceEquals(a, b))
+                return true;
+            if ((object)a == null || (object)b == null)
+                return false;
+			return a.Native == b.Native;
+		}
+        public override bool Equals(object obj) { return (this == obj as <#= wrapper #>); }
+        public override int GetHashCode() { return this.Native.GetHashCode(); }
 
 <# /* Interface */ #>
 		[MangleAs ("<#= Class.MangleType.ToString () #>")]

@@ -14,13 +14,15 @@ namespace Tests {
 			var hf3 = new HasField (3, hf2);
 
 			Assert.IsNull (hf1.other, "#1");
-			Assert.AreEqual (1, hf1.number);
+			Assert.AreEqual (1, hf1.number, "#2");
 
-			Assert.AreSame (hf2.other, hf1, "#2");
-			Assert.AreEqual (1, hf2.other.number);
+            Assert.That (hf2.other == hf1, "#3");
+            Assert.AreEqual (hf2.other, hf1, "#4");
+			Assert.AreEqual (1, hf2.other.number, "#5");
 
-			Assert.AreSame (hf3.other.other, hf1, "#3");
-			Assert.AreEqual (1, hf3.other.other.number, "#4");
+			Assert.That (hf3.other.other == hf1, "#6");
+			Assert.AreEqual (hf3.other.other, hf1, "#7");
+			Assert.AreEqual (1, hf3.other.other.number, "#8");
 		}
 	}
 }

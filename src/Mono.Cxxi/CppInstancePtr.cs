@@ -125,6 +125,36 @@ namespace Mono.Cxxi {
 			return ip.Native;
 		}
 
+        public static bool operator==(CppInstancePtr a, CppInstancePtr b)
+        {
+            // TODO: Should our non primary base return true as well?
+            if (object.ReferenceEquals(a, b))
+                return true;
+            if ((object)a == null || (object)b == null)
+                return false;
+            return (a.Native == b.Native);
+        }
+
+        public static bool operator!=(CppInstancePtr a, CppInstancePtr b)
+        {
+            return !(a == b);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null)
+                return false;
+            if (!(obj is CppInstancePtr))
+                return false;
+
+            return (this == (CppInstancePtr)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return this.Native.GetHashCode();
+        }
+
 		public IntPtr Native {
 			get {
 				if (ptr == IntPtr.Zero)
