@@ -217,18 +217,34 @@ namespace Mono.Cxxi.Abi {
 			);
 			code.Append (modifierCode.ToArray ());
 
+            // Type codes taken from http://www.kegel.com/mangle.html#operators
 		    switch (element) {
 			case CppTypes.Void:
 				code.Append ('X');
 				break;
 			case CppTypes.Int:
 				code.Append (modifiers.Transform (
-					For.AllInputsIn (CppModifiers.Unsigned, CppModifiers.Short).InAnyOrder ().Emit ('G')
+					For.AllInputsIn (CppModifiers.Unsigned, CppModifiers.Short).InAnyOrder ().Emit ('G'),
+                    For.AllInputsIn (CppModifiers.Short).InAnyOrder().Emit('F'),
+                    For.AllInputsIn (CppModifiers.Unsigned, CppModifiers.Long).InAnyOrder().Emit('K'),
+                    For.AllInputsIn (CppModifiers.Long).InAnyOrder().Emit('J'),
+                    For.AllInputsIn (CppModifiers.Unsigned).InAnyOrder().Emit('I')
 				).DefaultIfEmpty ('H').ToArray ());
-				break;
-			case CppTypes.Char:
-				code.Append ('D');
-				break;
+                break;
+            case CppTypes.Float:
+                code.Append('M');
+                break;
+            case CppTypes.Double:
+                code.Append(modifiers.Transform(
+                    For.AllInputsIn (CppModifiers.Long).InAnyOrder().Emit('O')
+                ).DefaultIfEmpty ('N').ToArray());
+                break;
+            case CppTypes.Char:
+                code.Append (modifiers.Transform (
+					For.AllInputsIn (CppModifiers.Unsigned).InAnyOrder ().Emit ('E'),
+					For.AllInputsIn (CppModifiers.Signed).InAnyOrder ().Emit ('C')
+				).DefaultIfEmpty ('D').ToArray());
+                break;
 			case CppTypes.Class:
 				code.Append ('V');
 		        code.Append(GetTypeNameWithBackReferences(mangleType, backReferences));
