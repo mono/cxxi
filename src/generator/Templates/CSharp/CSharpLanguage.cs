@@ -54,8 +54,8 @@ namespace Templates {
 				if (context.Is (Context.Parameter))
 					return "ref " + TypeName (str.TrimEnd ('&'), context);
                 if (context.Is(Context.Return))
-                    return (context.Is(Context.Interface) ? "[return: ByRef] IntPtr " : 
-                        string.Format("ByRef<{0}>", TypeName(str.TrimEnd('&'), context)));
+                    return (context.Is(Context.Interface) ? "[return: ByRef] IntPtr " :
+                        string.Format("ByReference<{0}>", TypeName(str.TrimEnd('&'), context)));
 				if (context.Is (Context.Generic))
 					return "IntPtr";
 			}

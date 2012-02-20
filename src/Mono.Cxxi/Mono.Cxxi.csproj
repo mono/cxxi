@@ -57,7 +57,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ByRef.cs" />
+    <Compile Include="ByReference.cs" />
     <Compile Include="CppLibrary.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="Abi\CppAbi.cs" />

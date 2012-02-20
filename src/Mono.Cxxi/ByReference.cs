@@ -6,19 +6,19 @@ using System.Runtime.InteropServices;
 
 namespace Mono.Cxxi
 {
-    public class ByRef<T>
+    public class ByReference<T>
     {
-        public ByRef(IntPtr ptr)
+        public ByReference(IntPtr ptr)
         {
             this.Pointer = ptr;
         }
 
-        public static implicit operator ByRef<T>(IntPtr ptr)
+        public static implicit operator ByReference<T>(IntPtr ptr)
         {
-            return new ByRef<T>(ptr);
+            return new ByReference<T>(ptr);
         }
 
-        public static implicit operator T(ByRef<T> byref)
+        public static implicit operator T(ByReference<T> byref)
         {
             return byref.Value;
         }
