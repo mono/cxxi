@@ -160,6 +160,33 @@ vbi:	   class  offset o.vbptr  o.vbte fVtorDisp
      NumberClass       8       4       4 0
 
 
+class AdderClassWithVirtualBaseNoVirtualMethods	size(12):
+	+---
+ 0	| {vbptr}
+	+---
+	+--- (virtual base NumberClass)
+ 4	| {vfptr}
+ 8	| num
+	+---
+
+AdderClassWithVirtualBaseNoVirtualMethods::$vbtable@:
+ 0	| 0
+ 1	| 4 (AdderClassWithVirtualBaseNoVirtualMethodsd(AdderClassWithVirtualBaseNoVirtualMethods+0)NumberClass)
+
+AdderClassWithVirtualBaseNoVirtualMethods::$vftable@:
+	| -4
+ 0	| &NumberClass::NegativeNumber
+ 1	| &NumberClass::Number
+ 2	| &AdderClassWithVirtualBaseNoVirtualMethods::{dtor}
+
+AdderClassWithVirtualBaseNoVirtualMethods::{dtor} this adjustor: 4
+AdderClassWithVirtualBaseNoVirtualMethods::__delDtor this adjustor: 4
+AdderClassWithVirtualBaseNoVirtualMethods::__vecDelDtor this adjustor: 4
+
+vbi:	   class  offset o.vbptr  o.vbte fVtorDisp
+     NumberClass       4       0       4 0
+
+
 class MultiplierClass	size(8):
 	+---
 	| +--- (base class NumberClass)
@@ -412,4 +439,3 @@ class _s__RTTIClassHierarchyDescriptor	size(16):
 
 
 Generating Code...
-   Creating library ..\bin\Debug\libtest.lib and object ..\bin\Debug\libtest.exp

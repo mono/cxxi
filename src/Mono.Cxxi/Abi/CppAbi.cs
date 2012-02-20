@@ -611,14 +611,22 @@ namespace Mono.Cxxi.Abi {
 				pinvokeTypes.Add (ToPInvokeType (pi.ParameterType, pi));
 			}
 
+            Type returnType = method.ReturnType;
+            if (methodType == MethodType.NativeCtor)
+                returnType = typeof(void);
+            else if (method.ReturnTypeCustomAttributes.IsDefined(typeof(ByRefAttribute), false))
+                returnType = typeof(IntPtr);
+            else
+                returnType = ToPInvokeType (method.ReturnType, method.ReturnTypeCustomAttributes);
+
+
 			return new PInvokeSignature {
 				OrigMethod = method,
 				Name = GetMangledMethodName (typeInfo, method),
 				Type = methodType,
 				CallingConvention = GetCallingConvention (method),
 				ParameterTypes = pinvokeTypes,
-				ReturnType = methodType == MethodType.NativeCtor? typeof (void) :
-					ToPInvokeType (method.ReturnType, method.ReturnTypeCustomAttributes)
+				ReturnType = returnType
 			};
 		}
 
