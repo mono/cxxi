@@ -2,7 +2,7 @@
 EXTRA_DIST = m4/expansions.m4
 
 if ENABLE_DEBUG
-ASSEMBLY_COMPILER_COMMAND = mcs
+ASSEMBLY_COMPILER_COMMAND = $(GMCS)
 ASSEMBLY_COMPILER_FLAGS =  -noconfig -codepage:utf8 -warn:4 -optimize- -debug "-define:DEBUG"
 BUILD_DIR = $(top_srcdir)/bin/Debug
 
@@ -17,7 +17,7 @@ GENERATOR_EXE_MDB=$(BUILD_DIR)/generator.exe.mdb
 endif
 
 if ENABLE_RELEASE
-ASSEMBLY_COMPILER_COMMAND = mcs
+ASSEMBLY_COMPILER_COMMAND = $(GMCS)
 ASSEMBLY_COMPILER_FLAGS =  -noconfig -codepage:utf8 -warn:4 -optimize+
 BUILD_DIR = $(top_srcdir)/bin/Release
 

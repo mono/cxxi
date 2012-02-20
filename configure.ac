@@ -21,9 +21,9 @@ if test "x$MONO" = "xno"; then
 	AC_MSG_ERROR([mono Not found])
 fi
 
-AC_PATH_PROG(GMCS, mcs, no)
+AC_PATH_PROG(GMCS, gmcs, no)
 if test "x$GMCS" = "xno"; then
-        AC_MSG_ERROR([mcs Not found])
+        AC_MSG_ERROR([gmcs Not found])
 fi
 
 AC_PATH_PROG(GCCXML, gccxml, no)
