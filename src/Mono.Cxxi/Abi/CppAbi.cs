@@ -469,7 +469,8 @@ namespace Mono.Cxxi.Abi {
 			else
 				lib = typeInfo.Library.Name;
 
-			var builder = typeInfo.emit_info.type_builder.DefinePInvokeMethod (entryPoint, lib, entryPoint,
+		    var cleanName = entryPoint.Replace("?", "_").Replace("@", "_");
+			var builder = typeInfo.emit_info.type_builder.DefinePInvokeMethod (cleanName, lib, entryPoint,
 			                                             MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.PinvokeImpl,
 			                                             CallingConventions.Standard, sig.ReturnType, sig.ParameterTypes.ToArray (),
 			                                             sig.CallingConvention.Value, CharSet.Ansi);
