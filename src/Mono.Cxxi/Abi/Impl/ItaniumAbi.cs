@@ -167,6 +167,7 @@ namespace Mono.Cxxi.Abi {
 			        )
 			);
 			code.Append (string.Join(string.Empty, modifierCode.ToArray ()));
+			int modifierLength = code.Length;
 
 			switch (element) {
 			case CppTypes.Int:
@@ -218,6 +219,16 @@ namespace Mono.Cxxi.Abi {
 
 			}
 
+			// If there were modifiers then always add it to the compression map
+			// NOTE: If there were multiple modifiers this causes us to skip sequence numbers
+			if (modifierLength > 0)
+			{
+				bool found;
+				string value = GetIdentifier(compressMap, mangleType.ToString(), modifierLength, out found);
+				if (found)
+					return value;
+			}
+
 			return code.ToString ();
 		}
 
@@ -243,22 +254,35 @@ namespace Mono.Cxxi.Abi {
 
 		string GetIdentifier (Dictionary<string, int> compressMap, string identifier)
 		{
+			bool found;
+			return GetIdentifier(compressMap, identifier, 1, out found);
+		}
+
+		string GetIdentifier (Dictionary<string, int> compressMap, string identifier, int modCount, out bool found)
+		{
 			int cid;
-			if (compressMap.TryGetValue (identifier, out cid))
-				return cid == 0 ? "S_" : ToBase36String (cid - 1);
-			compressMap [identifier] = compressMap.Count;
-			return identifier.Length.ToString () + identifier;
+			found = compressMap.TryGetValue(identifier, out cid);
+			if (found)
+				return "S" + (cid == 0 ? string.Empty : ToBase36String (cid - 1)) + "_";
+
+			if (!compressMap.TryGetValue ("@@Id", out cid))
+				cid = -1;
+
+			cid += (modCount > 0 ? modCount : 1);
+			compressMap[identifier] = cid;
+			compressMap["@@Id"] = cid;
+			return identifier.Length.ToString() + identifier;
 		}
 
 		const string Base36 = "0123456789abcdefghijklmnopqrstuvwxyz";
 		string ToBase36String (int input)
 		{
 			var result = new Stack<char> ();
-			while (input != 0)
+			do
 			{
 				result.Push (Base36 [input % 36]);
 				input /= 36;
-			}
+			} while (input != 0);
 			return new string (result.ToArray ());
 		}
 
