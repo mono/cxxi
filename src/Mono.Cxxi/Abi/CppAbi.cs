@@ -1039,7 +1039,7 @@ namespace Mono.Cxxi.Abi {
         // Section 3.1.4:
         // Classes with non-default copy ctors/destructors are returned using a hidden
         // argument
-	    protected bool ReturnByHiddenArgument (CppTypeInfo typeInfo, MethodInfo method)
+	    protected virtual bool ReturnByHiddenArgument (CppTypeInfo typeInfo, MethodInfo method)
 	    {
 	        if (!IsByVal (method.ReturnTypeCustomAttributes))
 	            return false;

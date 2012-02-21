@@ -295,6 +295,11 @@ namespace Mono.Cxxi.Abi {
 	        return elementTypeName + "@";
 	    }
 
+        protected override bool ReturnByHiddenArgument (CppTypeInfo typeInfo, MethodInfo method)
+        {
+            return IsByVal(method.ReturnTypeCustomAttributes);
+        }
+
 	    public class BackReferenceList
         {
             private readonly Dictionary<string, int> _backReferences = new Dictionary<string, int>();
