@@ -223,13 +223,13 @@ namespace Mono.Cxxi.Abi {
 				code.Append ('X');
 				break;
 			case CppTypes.Int:
-				code.Append (modifiers.Transform (
+				code.Append (modifiers.Transform (Choose.TopOne(
 					For.AllInputsIn (CppModifiers.Unsigned, CppModifiers.Short).InAnyOrder ().Emit ('G'),
                     For.AllInputsIn (CppModifiers.Short).InAnyOrder().Emit('F'),
                     For.AllInputsIn (CppModifiers.Unsigned, CppModifiers.Long).InAnyOrder().Emit('K'),
                     For.AllInputsIn (CppModifiers.Long).InAnyOrder().Emit('J'),
                     For.AllInputsIn (CppModifiers.Unsigned).InAnyOrder().Emit('I')
-				).DefaultIfEmpty ('H').ToArray ());
+				)).DefaultIfEmpty ('H').ToArray ());
                 break;
             case CppTypes.Float:
                 code.Append('M');
@@ -240,10 +240,10 @@ namespace Mono.Cxxi.Abi {
                 ).DefaultIfEmpty ('N').ToArray());
                 break;
             case CppTypes.Char:
-                code.Append (modifiers.Transform (
+                code.Append (modifiers.Transform (Choose.TopOne(
 					For.AllInputsIn (CppModifiers.Unsigned).InAnyOrder ().Emit ('E'),
 					For.AllInputsIn (CppModifiers.Signed).InAnyOrder ().Emit ('C')
-				).DefaultIfEmpty ('D').ToArray());
+				)).DefaultIfEmpty ('D').ToArray());
                 break;
 			case CppTypes.Class:
 				code.Append ('V');
