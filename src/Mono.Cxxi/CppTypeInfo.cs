@@ -92,7 +92,8 @@ namespace Mono.Cxxi {
 		private VTable lazy_vtable;
 
 		internal EmitInfo emit_info; // <- will be null when the type is done being emitted
-		public bool TypeComplete { get { return emit_info == null; } }
+	    protected internal bool? HasNonDefaultCopyCtorOrDtor;
+	    public bool TypeComplete { get { return emit_info == null; } }
 
 		#region Construction
 

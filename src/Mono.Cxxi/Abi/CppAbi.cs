@@ -577,28 +577,56 @@ namespace Mono.Cxxi.Abi {
 		 */
 		protected virtual void EmitNativeCall (CppTypeInfo typeInfo, MethodInfo nativeMethod, PInvokeSignature psig, LocalBuilder nativePtr)
 		{
-			var il = typeInfo.emit_info.current_il;
-			var interfaceMethod = psig.OrigMethod;
-			var interfaceArgs = interfaceMethod.GetParameters ();
+            var il = typeInfo.emit_info.current_il;
+            var interfaceMethod = psig.OrigMethod;
+            var interfaceArgs = interfaceMethod.GetParameters ();
+            var returnType = interfaceMethod.ReturnType;
+            var hiddenReturnByValue = ReturnByHiddenArgument (typeInfo, interfaceMethod);
 
-			int argLoadStart = 1; // For static methods, just strip off arg0 (.net this pointer)
-			if (!IsStatic (interfaceMethod))
-			{
-				argLoadStart = 2; // For instance methods, strip off CppInstancePtr and pass the corresponding IntPtr
-				il.Emit (OpCodes.Ldloc_S, nativePtr);
-			}
+            LocalBuilder returnValue = null;
 
-			// load and marshal arguments
-			for (int i = argLoadStart; i <= interfaceArgs.Length; i++) {
-				il.Emit (OpCodes.Ldarg, i);
-				EmitOutboundMarshal (il, interfaceArgs [i - 1].ParameterType, psig.ParameterTypes [i - 1]);
-			}
+            if (hiddenReturnByValue) {
+                returnValue = il.DeclareLocal (typeof (CppInstancePtr));
 
-			il.Emit (OpCodes.Call, nativeMethod);
+                if (typeof (ICppObject).IsAssignableFrom (returnType))
+                    il.Emit (OpCodes.Ldc_I4, GetTypeInfo (returnType).NativeSize);
+                else if (returnType.IsValueType)
+                    il.Emit (OpCodes.Ldc_I4, Marshal.SizeOf (returnType));
 
-			// Marshal return value
-			if (psig.Type != MethodType.NativeCtor)
-				EmitInboundMarshal (il, psig.ReturnType, interfaceMethod.ReturnType);
+                il.Emit (OpCodes.Newobj, cppip_fromsize);
+                il.Emit (OpCodes.Stloc, returnValue);
+                il.Emit (OpCodes.Ldloca, returnValue);
+                il.Emit (OpCodes.Call, cppip_native);
+            }
+
+
+            int argLoadStart = 1; // For static methods, just strip off arg0 (.net this pointer)
+            if (!this.IsStatic (interfaceMethod)) {
+                argLoadStart = 2; // For instance methods, strip off CppInstancePtr and pass the corresponding IntPtr
+                il.Emit (OpCodes.Ldloc_S, nativePtr);
+            }
+
+            // load and marshal arguments
+            for (int i = argLoadStart; i <= interfaceArgs.Length; i++) {
+                il.Emit (OpCodes.Ldarg, i);
+                this.EmitOutboundMarshal (il, interfaceArgs[i - 1].ParameterType, psig.ParameterTypes[i - 1]);
+            }
+
+            il.Emit (OpCodes.Call, nativeMethod);
+
+            // Marshal return value
+            if (psig.Type != MethodType.NativeCtor)
+                this.EmitInboundMarshal (il, psig.ReturnType, interfaceMethod.ReturnType);
+
+            if (hiddenReturnByValue) {
+                EmitCreateCppObjectFromNative (il, returnType, returnValue);
+
+                if (returnType.IsValueType) {
+                    // FIXME: This dispose should prolly be in a Finally block..
+                    il.Emit (OpCodes.Ldloca, returnValue);
+                    il.Emit (OpCodes.Call, cppip_dispose);
+                }
+            }
 		}
 
 
@@ -621,7 +649,7 @@ namespace Mono.Cxxi.Abi {
                 returnType = ToPInvokeType (method.ReturnType, method.ReturnTypeCustomAttributes);
 
 
-			return new PInvokeSignature {
+			var psig = new PInvokeSignature {
 				OrigMethod = method,
 				Name = GetMangledMethodName (typeInfo, method),
 				Type = methodType,
@@ -629,6 +657,14 @@ namespace Mono.Cxxi.Abi {
 				ParameterTypes = pinvokeTypes,
 				ReturnType = returnType
 			};
+
+            if (ReturnByHiddenArgument (typeInfo, method)) {
+                psig.ParameterTypes.Insert (0, typeof (IntPtr));
+                psig.ReturnType = typeof (void);
+            }
+
+		    return psig;
+
 		}
 
 		public virtual Type ToPInvokeType (Type t, ICustomAttributeProvider icap)
@@ -999,6 +1035,23 @@ namespace Mono.Cxxi.Abi {
 				il.MarkLabel (validRef);
 			}
 		}
+
+        // Section 3.1.4:
+        // Classes with non-default copy ctors/destructors are returned using a hidden
+        // argument
+	    protected bool ReturnByHiddenArgument (CppTypeInfo typeInfo, MethodInfo method)
+	    {
+	        if (!IsByVal (method.ReturnTypeCustomAttributes))
+	            return false;
+
+	        if (typeInfo.HasNonDefaultCopyCtorOrDtor == null)
+	            typeInfo.HasNonDefaultCopyCtorOrDtor = GetMethods (typeInfo.InterfaceType)
+	                .Any (m => (IsCopyConstructor (m) ||
+	                            GetMethodType (typeInfo, m) == MethodType.NativeDtor) &&
+	                           !IsArtificial (m));
+
+	        return typeInfo.HasNonDefaultCopyCtorOrDtor.Value;
+	    }
 	}
 
 }

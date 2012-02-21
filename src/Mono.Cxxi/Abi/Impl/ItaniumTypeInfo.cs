@@ -37,8 +37,6 @@ namespace Mono.Cxxi.Abi {
 
 	public class ItaniumTypeInfo : CppTypeInfo {
 
-		protected internal bool? has_non_default_copy_ctor_or_dtor;
-
 		public ItaniumTypeInfo (CppLibrary lib, string typeName, Type interfaceType, Type nativeLayout, Type/*?*/ wrapperType)
 			: base (lib, typeName, interfaceType, nativeLayout, wrapperType)
 		{
