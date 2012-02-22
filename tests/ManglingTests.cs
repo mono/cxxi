@@ -43,23 +43,36 @@ namespace Tests {
 			var cls = new Ns1.Ns2.Namespaced2 ();
 			cls.Test1 ();
 			cls.Test2 (null);
-            
-            Compression c = null;
-            Tests.Ns1.Namespaced n = null;
-            Tests.Ns1.Ns2.Namespaced2 n2 = null;
-            float f1 = 0.0f, f2 = 0.0f;
-            var r3 = Ns1.Ns2.Namespaced2.Test3(n2, n2, n, n, 11);
-            Assert.AreEqual(11, r3, "#3");
-
-            var r4 = Ns1.Ns2.Namespaced2.Test4(n2, n2, n, n, n2, n2, n, n, 111);
-            Assert.AreEqual(111, r4, "#4");
-
-            var r5 = Ns1.Ns2.Namespaced2.Test5(n2, n2, c, c, 1111);
-            Assert.AreEqual(1111, r5, "#5");
-
-            var r6 = Ns1.Ns2.Namespaced2.Test6(n2, n2, ref f1, ref f2, 11111);
-            Assert.AreEqual(11111, r6, "#6");
 		}
+
+        [Test]
+        public void TestNamespace4 ()
+	    {
+	        var r3 = Ns1.Ns2.Namespaced2.Test3(null, null, null, null, 11);
+	        Assert.AreEqual(11, r3, "#3");
+	    }
+
+	    [Test]
+        public void TestNamespace3 ()
+	    {
+	        float f1 = 0.0f, f2 = 0.0f;
+	        var r6 = Ns1.Ns2.Namespaced2.Test6(null, null, ref f1, ref f2, 11111);
+	        Assert.AreEqual(11111, r6, "#6");
+	    }
+
+        [Test]
+        public void TestNamespace2 ()
+	    {
+	        var r5 = Ns1.Ns2.Namespaced2.Test5(null, null, null, null, 1111);
+	        Assert.AreEqual(1111, r5, "#5");
+	    }
+
+	    [Test]
+        public void TestNamespace ()
+	    {
+	        var r4 = Ns1.Ns2.Namespaced2.Test4(null, null, null, null, null, null, null, null, 111);
+	        Assert.AreEqual(111, r4, "#4");
+	    }
 	}
 }
 

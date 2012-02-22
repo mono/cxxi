@@ -75,13 +75,10 @@ namespace Mono.Cxxi.Abi {
                 nm.Append("?1");
             else
             {
-                backReferences.Add(methodName);
-                nm.Append(methodName).Append('@');
+                nm.Append (backReferences.Add (methodName));
             }
 
-            backReferences.Add(className);
-            nm.Append(className);
-            nm.Append("@");
+            nm.Append (backReferences.Add (className));
             
             // FIXME: This has to include not only the name of the immediate containing class,
 			//  but also all names of containing classes and namespaces up the hierarchy.
@@ -89,8 +86,7 @@ namespace Mono.Cxxi.Abi {
             {
                 foreach (var ns in type.Namespaces.Reverse())
                 {
-                    backReferences.Add(ns);
-                    nm.Append(ns).Append("@");
+                    nm.Append (backReferences.Add (ns));
                 }
             }
 
@@ -176,8 +172,29 @@ namespace Mono.Cxxi.Abi {
             var argumentBackReferences = new BackReferenceList();
             for (int i = argStart; i < parameters.Length; i++)
             {
-                var typeCode = GetTypeCode(GetMangleType(parameters[i], parameters[i].ParameterType), backReferences);
-                nm.Append(argumentBackReferences.Add(typeCode));
+                var mangleType = GetMangleType (parameters[i], parameters[i].ParameterType);
+
+                /* Basically what is going on is that we are pre-scanning the elements of the 
+                 * parameter to see if any new backreferences were created. If there were we need 
+                 * to add the updated typeCode to are arguments backreference since they will be
+                 * used in any proceeding lookups. If they are the same we just do things normally.                 
+                 * 
+                 * We could improve this by creating a method to do the pre-scan but we would have 
+                 * to do some fanangling so this works for now.
+                 */
+                
+                var originalTypeCode = GetTypeCode(mangleType, backReferences);
+                var typeCode = GetTypeCode (mangleType, backReferences);
+
+                if(originalTypeCode == typeCode)
+                {
+                    nm.Append(argumentBackReferences.Add(typeCode, false));
+                }
+                else
+                {
+                    argumentBackReferences.Add(typeCode, false);
+                    nm.Append(originalTypeCode);
+                }
             }
 
 		    nm.Append ("@Z");
@@ -276,7 +293,11 @@ namespace Mono.Cxxi.Abi {
         private static string GetTypeNameWithBackReferences(CppType mangleType, BackReferenceList backReferences)
 	    {
 	        var sb = new StringBuilder();
-	        sb.Append(GetTypeCodeOrBackReference(mangleType.ElementTypeName, backReferences));
+
+            string value = GetTypeCodeOrBackReference(mangleType.ElementTypeName, backReferences);
+
+            
+            sb.Append(value);
 	        if (mangleType.Namespaces != null)
 	        {
 	            foreach (var ns in mangleType.Namespaces.Reverse())
@@ -289,10 +310,13 @@ namespace Mono.Cxxi.Abi {
 
 	    private static string GetTypeCodeOrBackReference(string elementTypeName, BackReferenceList backReferences)
 	    {
+	        return backReferences.Add(elementTypeName);
+
 	        if (backReferences.Contains(elementTypeName)) 
                 return backReferences[elementTypeName];
 
-	        return elementTypeName + "@";
+	        //backReferences.Add(elementTypeName);
+            return elementTypeName  + "@";
 	    }
 
         protected override bool ReturnByHiddenArgument (CppTypeInfo typeInfo, MethodInfo method)
@@ -319,6 +343,11 @@ namespace Mono.Cxxi.Abi {
 
             public string Add(string value)
             {
+                return Add(value, true);
+            }
+
+            public string Add(string value, bool appendSplitter)
+            {
                 if (value.Length == 1)
                     return value;
 
@@ -327,7 +356,7 @@ namespace Mono.Cxxi.Abi {
 
                 _backReferences.Add(value, _backReferences.Count);
 
-                return value;
+                return value + (appendSplitter ? "@" : string.Empty);
             }
         }
 	}
