@@ -205,16 +205,50 @@ namespace Mono.Cxxi.Abi {
 			case CppTypes.Struct:
 			case CppTypes.Union:
 			case CppTypes.Enum:
-				if (mangleType.Namespaces != null) {
+				// TODO: This is getting a little ridiculous and should probably be refactored...
+
+				// Determine if we have any namespaces to print out
+				bool hasNamespace = (mangleType.Namespaces != null);
+				if (hasNamespace) {
 					code.Append ('N');
 					foreach (var ns in mangleType.Namespaces)
 						code.Append (GetIdentifier (compressMap, ns));
 				}
 
-				code.Append (GetIdentifier (compressMap, mangleType.ElementTypeName));
+				// Look up the type by itself first
+				// NOTE: Order here is important so that they get sequenced properly
+				bool foundType;
+				string value = GetIdentifier (compressMap, mangleType.ElementTypeName, 0, out foundType);
+				if (modifierLength > 0)
+				{
+					// Next lookup the type with modifiers for a match
+					bool foundExact;
+					string exact = GetIdentifier(compressMap, mangleType.ToString(), modifierLength, out foundExact);
+					if (foundExact)
+					{
+						// Use the exact values sequence ID and remove all modifiers and namespaces
+						code.Length = 0;
+						hasNamespace = false;
+						value = exact;
+					}
+					else if (foundType)
+					{
+						// We didn't get an exact match but we know the type
+						// so remove the namespaces, but not the modifiers
+						code.Length = modifierLength;
+						hasNamespace = false;
+					}
+				}
 
-				if (mangleType.Namespaces != null)
+				// Print out our class identifier
+				code.Append(value);
+
+				// If we're printing out namespaces then signal the end of the namespace
+				if (hasNamespace)
 					code.Append ('E');
+
+				// Since we handle the modifier compression in here make sure we skip the logic below
+				modifierLength = 0;
 				break;
 
 			}
