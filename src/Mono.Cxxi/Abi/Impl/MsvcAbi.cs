@@ -47,6 +47,11 @@ namespace Mono.Cxxi.Abi {
 		{
 		}
 
+        public override CppTypeInfo MakeTypeInfo(CppLibrary lib, string typeName, Type interfaceType, Type layoutType, Type wrapperType)
+        {
+            return new MsvcTypeInfo(lib, typeName, interfaceType, layoutType, wrapperType);
+        }
+
 		public override CallingConvention? GetCallingConvention (MethodInfo methodInfo)
 		{
 			// FIXME: Varargs methods ... ?

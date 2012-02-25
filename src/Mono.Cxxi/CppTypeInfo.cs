@@ -157,7 +157,7 @@ namespace Mono.Cxxi {
 		//  (by default, just the vtable pointer)
 		public virtual int FieldOffsetPadding {
 			get { return field_offset_padding_without_vtptr +
-                (this.HasVFTable ? IntPtr.Size : 0) +
+                (this.HasVTable ? IntPtr.Size : 0) +
                 (this.HasVBTable ? IntPtr.Size : 0); }
 		}
 
@@ -413,21 +413,13 @@ namespace Mono.Cxxi {
 
 		#region V-Table
 
-        public virtual bool HasVFTable
-        {
-            get { return VirtualMethods.Any(
-                m => !m.OrigMethod.IsDefined(typeof(ArtificialAttribute), false)); }
-        }
-
-        public virtual bool HasVBTable
-        {
-            get { return this.BaseClasses.Any(
-                c => VirtualBaseAttribute.IsVirtualBaseOf(this.WrapperType, c.WrapperType)); }
-        }
-
 		public virtual bool HasVTable {
 			get { return VirtualMethods.Any (); }
 		}
+
+        public virtual bool HasVBTable {
+            get { return false; }
+        }
 
 		public virtual VTable VTable {
 			get {

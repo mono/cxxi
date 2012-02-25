@@ -41,6 +41,14 @@ namespace Mono.Cxxi.Abi {
 			: base (lib, typeName, interfaceType, nativeLayout, wrapperType)
 		{
 		}
+
+        public override int VTableTopPadding
+        {
+            get
+            {
+                return IntPtr.Size * (2 + this.GetVirtualBases().Count());
+            }
+        }
 /*
 		protected override void AddBase (CppTypeInfo baseType, BaseVirtualMethods location)
 		{

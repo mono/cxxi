@@ -87,10 +87,7 @@ namespace Mono.Cxxi.Abi {
             if (vtable == IntPtr.Zero)
                 vtable = instance.NativeVTable;
 
-			var ftnptr = Marshal.ReadIntPtr (vtable, (index * EntrySize) + type_info.VTableTopPadding);
-            if(ftnptr.ToInt32() < 0)
-                throw new InvalidDataException("Function pointer should not be negative.");
-
+			var ftnptr = Marshal.ReadIntPtr (vtable, (index * EntrySize));
 			if (ftnptr == IntPtr.Zero)
 				throw new NullReferenceException ("Native VTable contains null...possible abstract class???");
 
@@ -106,12 +103,13 @@ namespace Mono.Cxxi.Abi {
 		// FIXME: Make this method unsafe.. it would probably be much faster
 		public virtual void InitInstanceOffset(ref CppInstancePtr instance, bool isPrimary, int vtableOffset)
 		{
-            if (this.TypeInfo.HasVFTable)
+            if (this.TypeInfo.HasVTable)
             {
                 var basePtr = Marshal.ReadIntPtr(instance.Native, vtableOffset);
                 Debug.Assert(basePtr != IntPtr.Zero);
 
-                if (basePtr == vtPtr)
+                var realPtr = this.Pointer;
+                if (basePtr == realPtr)
                     return;
 
                 // If this is the primary class or if this is not a managed alloc
@@ -125,26 +123,27 @@ namespace Mono.Cxxi.Abi {
                 if (!initialized)
                 {
                     // FIXME: This could probably be a more efficient memcpy
-                    for (int i = 0; i < type_info.VTableTopPadding; i++)
-                        Marshal.WriteByte(vtPtr, i, Marshal.ReadByte(basePtr, i));
+					int top = type_info.VTableTopPadding;
+                    for (int i = 0; i < top; i++)
+                        Marshal.WriteByte(vtPtr, i, Marshal.ReadByte(basePtr, i - top));
 
-                    int currentOffset = type_info.VTableTopPadding;
+                    int currentOffset = 0;
                     for (int i = 0; i < EntryCount; i++)
                     {
-                        if (Marshal.ReadIntPtr(vtPtr, currentOffset) == IntPtr.Zero)
-                            Marshal.WriteIntPtr(vtPtr, currentOffset, Marshal.ReadIntPtr(basePtr, currentOffset));
+                        if (Marshal.ReadIntPtr(realPtr, currentOffset) == IntPtr.Zero)
+                            Marshal.WriteIntPtr(realPtr, currentOffset, Marshal.ReadIntPtr(basePtr, currentOffset));
 
                         currentOffset += EntrySize;
                     }
 
                     // FIXME: This could probably be a more efficient memcpy
                     for (int i = 0; i < type_info.VTableBottomPadding; i++)
-                        Marshal.WriteByte(vtPtr, currentOffset + i, Marshal.ReadByte(basePtr, currentOffset + i));
+                        Marshal.WriteByte(realPtr, currentOffset + i, Marshal.ReadByte(basePtr, currentOffset + i));
 
                     initialized = true;
                 }
 
-                Marshal.WriteIntPtr(instance.Native, vtableOffset, vtPtr);
+                Marshal.WriteIntPtr(instance.Native, vtableOffset, realPtr);
             }
 
             // TODO: I should probably be looking up the offsets via the vbtable rather than this
@@ -165,7 +164,7 @@ namespace Mono.Cxxi.Abi {
 		public virtual void ResetInstance (CppInstancePtr instance)
 		{
             // TODO: Should we reset the virtual base vftables as well?
-            if (this.TypeInfo.HasVFTable)
+            if (this.TypeInfo.HasVTable)
 			    Marshal.WriteIntPtr (instance.Native, instance.NativeVTable);
 		}
 
@@ -174,7 +173,7 @@ namespace Mono.Cxxi.Abi {
 		}
 
 		public IntPtr Pointer {
-			get { return vtPtr; }
+            get { return new IntPtr(vtPtr.ToInt64() + type_info.VTableTopPadding); }
 		}
 
 		protected virtual void Dispose (bool disposing)
