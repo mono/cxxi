@@ -424,7 +424,7 @@ namespace Mono.Cxxi {
 		public virtual VTable VTable {
 			get {
 				CompleteType ();
-				if (!HasVTable)
+				if (!HasVTable && !this.GetVirtualBases().Any())
 					return null;
 
 				if (lazy_vtable == null)
