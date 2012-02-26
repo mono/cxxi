@@ -147,6 +147,15 @@ namespace Mono.Cxxi {
 			}
 		};
 
+        // These are the only types that support fixed buffer sizes
+        public static readonly List<CppTypes> FixedTypes = new List<CppTypes>()
+        {
+            CppTypes.Bool, CppTypes.Char, CppTypes.Double,
+            CppTypes.Float, CppTypes.Int, CppTypes.WChar_T
+        };
+
+        public bool IsFixedType { get { return FixedTypes.Contains(this.ElementType); } }
+
 		public CppTypes ElementType { get; set; }
 
 		// if the ElementType is Union, Struct, Class, or Enum
