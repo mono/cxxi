@@ -30,7 +30,7 @@ private void WriteMethodHeader (Method method, string layoutClass, bool isNonPri
 
 	Write (CurrentIndent + (@protected? "protected" : method.Access.ToString ()) + " ");
 	if (method.IsConstructor) {
-		Write (method.FormattedName);
+		Write (method.Name);
 	} else {
 		if (method.IsStatic)  Write ("static ");
 		if (method.IsVirtual && (!isNonPrimaryOverride || layoutClass != null)) Write ("virtual ");
