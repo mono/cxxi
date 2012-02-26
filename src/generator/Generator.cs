@@ -563,6 +563,16 @@ public class Generator {
 		return null;
 	}
 
+    public static string GetSafeFileName(string name)
+    {
+        // Basic implementation of making safe file names by replacing all invalid chars with '_'
+        var split = name.Split(Path.GetInvalidFileNameChars());
+        if (split.Length == 0)
+            return name;
+
+        return string.Join("_", split);
+    }
+
 	void GenerateCode () {
 		Directory.CreateDirectory (OutputDir);
 
@@ -584,7 +594,7 @@ public class Generator {
 				if (klass.Disable)
 					continue;
 
-				using (TextWriter w = File.CreateText (Path.Combine (OutputDir, klass.Name + ".cs"))) {
+				using (TextWriter w = File.CreateText (Path.Combine (OutputDir, GetSafeFileName(klass.Name) + ".cs"))) {
 					ClassTemplate.Generator = this;
 					ClassTemplate.Class = klass;
 					ClassTemplate.Nested = false;
