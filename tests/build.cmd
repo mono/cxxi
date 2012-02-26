@@ -1,7 +1,7 @@
 @echo off
 
-SET FILES=MarshalingTests InheritanceTests FieldTests ManglingTests
-SET CLASSES=HasField NumberClass AdderClass AdderClassWithVirtualBase AdderClassWithVirtualBaseNoVirtualMethods MultiplierClass MultiplierClassWithVirtualBase ClassWithNonVirtualBases ClassWithVirtualBases ClassThatOverridesStuff ClassThatRoundtrips Compression Namespaced Namespaced2 ClassWithCopyCtor ClassWithDtor ClassWithoutCopyCtor Class
+SET FILES=MarshalingTests InheritanceTests FieldTests ManglingTests TemplateTests
+SET CLASSES=HasField NumberClass AdderClass AdderClassWithVirtualBase AdderClassWithVirtualBaseNoVirtualMethods MultiplierClass MultiplierClassWithVirtualBase ClassWithNonVirtualBases ClassWithVirtualBases ClassThatOverridesStuff ClassThatRoundtrips Compression Namespaced Namespaced2 ClassWithCopyCtor ClassWithDtor ClassWithoutCopyCtor Class AdderTemplate
 SET top_srcdir=..\
 SET BUILD_DIR=%top_srcdir%bin\Debug\
 SET INTEROP_DLL=%BUILD_DIR%Mono.Cxxi.dll
