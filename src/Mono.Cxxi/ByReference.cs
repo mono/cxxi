@@ -23,6 +23,11 @@ namespace Mono.Cxxi
             return byref.Value;
         }
 
+        public static implicit operator IntPtr(ByReference<T> byref)
+        {
+            return byref.Pointer;
+        }
+
         public IntPtr Pointer
         {
             get;
