@@ -81,6 +81,10 @@
     <Compile Include="generated\AdderClass.cs" />
     <Compile Include="generated\AdderClassWithVirtualBase.cs" />
     <Compile Include="generated\AdderClassWithVirtualBaseNoVirtualMethods.cs" />
+    <Compile Include="generated\AdderTemplateOfDouble.cs" />
+    <Compile Include="generated\AdderTemplateOfFloat.cs" />
+    <Compile Include="generated\AdderTemplateOfInt.cs" />
+    <Compile Include="generated\AdderTemplateOfShortInt.cs" />
     <Compile Include="generated\Class.cs" />
     <Compile Include="generated\ClassThatOverridesStuff.cs" />
     <Compile Include="generated\ClassThatRoundtrips.cs" />
@@ -101,6 +105,7 @@
     <Compile Include="InheritanceTests.cs" />
     <Compile Include="FieldTests.cs" />
     <Compile Include="ManglingTests.cs" />
+    <Compile Include="TemplateTests.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
