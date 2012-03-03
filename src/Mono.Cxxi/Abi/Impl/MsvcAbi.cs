@@ -83,6 +83,10 @@ namespace Mono.Cxxi.Abi {
                 nm.Append (backReferences.Add (methodName));
             }
 
+            var templates = type.Modifiers.OfType<CppModifiers.TemplateModifier>().FirstOrDefault();
+            if (templates != null)
+                nm.Append("?$");
+
             nm.Append (backReferences.Add (className));
             
             // FIXME: This has to include not only the name of the immediate containing class,
@@ -93,6 +97,30 @@ namespace Mono.Cxxi.Abi {
                 {
                     nm.Append (backReferences.Add (ns));
                 }
+            }
+
+            // Add our template types after the class name
+            if (templates != null)
+            {
+                templates.Types.All(mangleType =>
+                    {
+                        var originalTypeCode = GetTypeCode(mangleType, backReferences);
+                        var typeCode = GetTypeCode(mangleType, backReferences);
+
+                        if (originalTypeCode == typeCode)
+                        {
+                            nm.Append(backReferences.Add(typeCode, false));
+                        }
+                        else
+                        {
+                            backReferences.Add(typeCode, false);
+                            nm.Append(originalTypeCode);
+                        }
+
+                        return true;
+                    });
+
+                nm.Append("@");
             }
 
 		    nm.Append ("@");
