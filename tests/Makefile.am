@@ -10,13 +10,15 @@ NATIVE = \
 	MarshalingTests \
 	InheritanceTests \
 	FieldTests \
-	ManglingTests
+	ManglingTests \
+	TemplateTests
 
 MANAGED =  \
 	FieldTests.cs \
 	InheritanceTests.cs \
 	ManglingTests.cs \
-	MarshalingTests.cs
+	MarshalingTests.cs \
+	TemplateTests.cs
 	
 REFERENCES =  \
 	-pkg:mono-nunit

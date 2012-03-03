@@ -114,6 +114,16 @@ namespace Mono.Cxxi.Abi {
 
 			nm.Append (GetIdentifier (compressMap, className));
 
+			// Insert the class template types here
+            var templates = type.Modifiers.OfType<CppModifiers.TemplateModifier>().FirstOrDefault();
+            if (templates != null)
+			{
+                nm.Append("I");
+				foreach (var mangleType in templates.Types)
+					nm.Append (GetTypeCode (mangleType, compressMap));
+                nm.Append("E");
+			}
+
 			// FIXME: Implement compression completely
 
 			switch (methodType) {
