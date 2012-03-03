@@ -311,7 +311,8 @@ namespace Mono.Cxxi {
 		public virtual CppType GetMangleType ()
 		{
 			var mangleType = Library.Abi.GetMangleType (InterfaceType, InterfaceType);
-			mangleType.ElementTypeName = TypeName;
+			mangleType.ElementTypeName = this.WrapperType.GetCustomAttributes(typeof(TemplateClassAttribute), false)
+                .Cast<TemplateClassAttribute>().Select(a => a.ClassName).FirstOrDefault() ?? this.TypeName;
 			return mangleType;
 		}
 

@@ -189,7 +189,7 @@ namespace Mono.Cxxi {
 
 			public override string ToString ()
 			{
-				return string.Format ("<{0}>", Types == null? "" : string.Join (", ", Types.Select (t => t.ToString ()).ToArray ()));
+				return string.Format ("<{0}>", Types == null? "" : string.Join (", ", Types.Select (t => t.ToCppString ()).ToArray ()));
 			}
 		}
 	}

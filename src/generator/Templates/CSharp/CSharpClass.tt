@@ -27,7 +27,9 @@ using Mono.Cxxi;
 
 namespace <#= @namespace #> {
 <# } /* if !Nested */ #>
-	<#= GetVirtualBasesString () #> public partial class <#= wrapper #> : <#= GetBaseString () #> {
+    <#= GetTemplatesString () #>
+	<#= GetVirtualBasesString () #>
+	public partial class <#= wrapper #> : <#= GetBaseString () #> {
 
 		private static readonly <#= iface #> impl = Libs.<#= Generator.Lib.BaseName #>.GetClass<<#= iface + "," + layout + "," + wrapper #>> ("<#= Class.Name #>");
 <# if (!hasBase) { #>
@@ -408,6 +410,15 @@ private void WriteParameters (IList<Parameter> parameters, bool writeType, bool 
 
 		Write (CSharpLanguage.SafeIdentifier (parameters [i].Name));
 	}
+}
+
+private string GetTemplatesString()
+{
+    if (string.IsNullOrEmpty(Class.TemplateName))
+        return string.Empty;
+
+    return string.Format("[TemplateClass(\"{0}\")]{1}",
+        Class.TemplateName, Environment.NewLine);
 }
 
 private string GetVirtualBasesString()

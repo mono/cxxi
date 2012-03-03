@@ -85,6 +85,15 @@ private void WriteParameters (IList<Parameter> parameters, bool writeType, bool 
 	}
 }
 
+private string GetTemplatesString()
+{
+    if (string.IsNullOrEmpty(Class.TemplateName))
+        return string.Empty;
+
+    return string.Format("[TemplateClass(\"{0}\")]{1}",
+        Class.TemplateName, Environment.NewLine);
+}
+
 private string GetVirtualBasesString()
 {
     if (Class.VirtualBases.Count == 0)
@@ -192,6 +201,9 @@ if (!Nested) {
             
             #line default
             #line hidden
+
+            #line 30 "/Users/alex/OpenSource/cppinterop/src/generator/Templates/CSharp/CSharpClass.tt"
+            this.Write("\t" + GetTemplatesString());
 
             #line 30 "/Users/alex/OpenSource/cppinterop/src/generator/Templates/CSharp/CSharpClass.tt"
             this.Write("\t" + GetVirtualBasesString());
@@ -670,6 +682,9 @@ if (!Nested) {
  PushIndent ("\t\t");
 		foreach (var method in Class.Methods.Where (m => m.GenWrapperMethod)) {
 			var methodName = CSharpLanguage.SafeIdentifier (method.Name);
+            if (method.IsConstructor)
+                methodName = Class.Name;
+
 			WriteMethodHeader (method, layoutClass, false, false);
 
 			if (method.IsConstructor)

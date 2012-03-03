@@ -229,6 +229,21 @@ public class Generator {
 			if (klass == null)
 				continue;
 
+            // Compute templates and name
+            int index = klass.Name.IndexOf("<");
+            if (index >= 0)
+            {
+                // Separate out the template class name and the template types
+                string className = klass.Name.Substring(0, index).Trim();
+                string templateTypes = klass.Name.Substring(index).Trim();
+                klass.TemplateName = klass.Name;
+                klass.TemplateClassName = className;
+                klass.Name = CreateTemplateClassName(className, templateTypes);
+
+                // Ensure outside references to this class use the proper name as well
+                //klass.Node.Name = klass.Name;
+            }
+
 			// Compute bases
 			foreach (Node bn in klass.Node.Children.Where (o => o.Type == "Base")) {
 				Class baseClass = NodeToNamespace [bn.NodeForAttr ("type")] as Class;
@@ -239,6 +254,30 @@ public class Generator {
 			}
 		}
 	}
+
+    public static string CreateTemplateClassName(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return name;
+
+        int index = name.IndexOf("<");
+        if (index >= 0)
+        {
+            // Separate out the template class name and the template types
+            string className = name.Substring(0, index).Trim();
+            string templateTypes = name.Substring(index).Trim();
+            return CreateTemplateClassName(className, templateTypes);
+        }
+
+        return name;
+    }
+
+    public static string CreateTemplateClassName(string className, string typeList)
+    {
+        var textInfo = System.Globalization.CultureInfo.InvariantCulture.TextInfo;
+        return className + "Of" + string.Join("", typeList.Split('<', ',', ' ', '>')
+            .Select(s => textInfo.ToTitleCase(s)).ToArray());
+    }
 
 	void SetParentNamespace (Namespace ns)
 	{
@@ -336,6 +375,12 @@ public class Generator {
 						IsConstructor = ctor,
 						IsDestructor = dtor
 				};
+
+                // If this is a template class then adjust the method name
+                // It needs to match the method name we're going to generate
+                bool isTemplate = !string.IsNullOrEmpty(klass.TemplateName);
+                if (isTemplate && method.IsConstructor)
+                    method.Name = klass.Name;
 
 				if (method.Access == Access.@private)
 					skip = true;
@@ -636,10 +681,16 @@ public class Generator {
 	public Filter GetFilterOrDefault (CppType cpptype)
 	{
 		var fqn = cpptype.ElementTypeName;
+
+        // Convert any template types to their managed names
+        var mod = cpptype.Modifiers.FirstOrDefault(m => m == CppModifiers.Template);
+        if (mod != null)
+            fqn = CreateTemplateClassName(fqn, mod.ToString());
+
 		if (cpptype.Namespaces != null)
 			fqn = string.Join ("::", cpptype.Namespaces) + "::" + fqn;
 
-		var newtype = new CppType (fqn, cpptype.Modifiers.Where (m => m == CppModifiers.Template));
+		var newtype = new CppType (fqn, null);
 		return GetFilterOrDefault (newtype.ToString ().Replace (" ", ""));
 	}
 

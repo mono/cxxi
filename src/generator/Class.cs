@@ -75,6 +75,14 @@ public class Class : Namespace {
 		set;
 	}
 
+    public string TemplateName {
+        get; set;
+    }
+
+    public string TemplateClassName {
+        get; set;
+    }
+
 	public CppType MangleType {
 		get;
 		set;

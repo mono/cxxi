@@ -17,6 +17,45 @@ namespace Mono.Cxxi {
     #region Interface method attributes
 
     [AttributeUsage(AttributeTargets.Class)]
+    public class TemplateClassAttribute : Attribute
+    {
+        public TemplateClassAttribute(string templateName)
+        {
+            int index = templateName.IndexOf("<");
+            if (index >= 0)
+            {
+                this.ClassName = templateName.Substring(0, index);
+                this.Types = templateName.Substring(index + 1).Trim('>', ' ').Split(',');
+            }
+            else
+            {
+                this.ClassName = templateName;
+                this.Types = new string[0];
+            }
+        }
+
+        public string FullName
+        {
+            get
+            {
+                return this.ClassName + "<" + string.Join(",", this.Types) + ">";
+            }
+        }
+
+        public string ClassName
+        {
+            get;
+            private set;
+        }
+
+        public string[] Types
+        {
+            get;
+            private set;
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Class)]
     public class VirtualBaseAttribute : Attribute
     {
 

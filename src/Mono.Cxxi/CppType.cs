@@ -362,6 +362,31 @@ namespace Mono.Cxxi {
 			}
 		}
 
+        public string ToCppString()
+        {
+            StringBuilder cppTypeString = new StringBuilder();
+
+            if (internalModifiers != null)
+            {
+                foreach (var modifier in internalModifiers)
+                    cppTypeString.Append(modifier.ToString()).Append(' ');
+            }
+
+            if (ElementType != CppTypes.Unknown && ElementType != CppTypes.Typename)
+                cppTypeString.Append(Enum.GetName(typeof(CppTypes), ElementType).ToLower()).Append(' ');
+
+            if (Namespaces != null)
+            {
+                foreach (var ns in Namespaces)
+                    cppTypeString.Append(ns).Append("::");
+            }
+
+            if (ElementTypeName != null && ElementType != CppTypes.Typename)
+                cppTypeString.Append(ElementTypeName);
+
+            return cppTypeString.ToString().Trim();
+        }
+
 		public override string ToString ()
 		{
 			StringBuilder cppTypeString = new StringBuilder ();
