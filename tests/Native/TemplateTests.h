@@ -31,3 +31,23 @@ AdderShort atshort;
 AdderInt atint;
 AdderFloat atfloat;
 AdderDouble atdouble;
+
+// Sigh... we need to actually use all the methods in order for them to be generated as well
+void ForceSymbols()
+{
+	AdderInt a(1);
+	int x = a.Number();
+	a.Add(x);
+	
+	AdderShort b(1);
+	short y = b.Number();
+	b.Add(y);
+	
+	AdderFloat c(1.0);
+	short z = c.Number();
+	c.Add(z);
+	
+	AdderDouble d(1.0);
+	short w = d.Number();
+	d.Add(w);
+}
