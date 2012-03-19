@@ -210,6 +210,9 @@ namespace Mono.Cxxi.Abi {
 				code.Append(mangleType.ElementTypeName);
 				code.Append ("@@");
 				break;
+            case CppTypes.Bool:
+                code.Append("_N");
+                break;
 			}
 
 			return code.ToString ();
