@@ -53,6 +53,20 @@ namespace Mono.Cxxi {
 					retVal = Marshal.ReadInt16 (ip.Native, fieldOffset);
 				else if (retType.Equals (typeof (Int32)))
 					retVal = Marshal.ReadInt32 (ip.Native, fieldOffset);
+                else if (retType.Equals(typeof(Double)))
+                {
+                    IntPtr doubleStart = new IntPtr(ip.Native.ToInt64() + fieldOffset);
+                    byte[] buffer = new byte[8];
+                    Marshal.Copy(doubleStart, buffer, 0, 8);
+                    retVal = BitConverter.ToDouble(buffer, 0);
+                }
+                else if (retType.Equals(typeof(Int64)))
+                {
+                    IntPtr doubleStart = new IntPtr(ip.Native.ToInt64() + fieldOffset);
+                    byte[] buffer = new byte[8];
+                    Marshal.Copy(doubleStart, buffer, 0, 8);
+                    retVal = BitConverter.ToInt64(buffer, 0);
+                }
 
 				else if (typeof (ICppObject).IsAssignableFrom (retType)) {
 
