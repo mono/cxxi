@@ -10,13 +10,7 @@
 #ifndef _CPPINTEROP_NUNIT_H_
 #define _CPPINTEROP_NUNIT_H_
 
-#ifdef __GNUC__
-#define EXPORT
-#elif defined(_MSC_VER)
-#define EXPORT __declspec(dllexport)
-#else
-#error Unknown compiler!
-#endif
+#include "common.h"
 
 typedef const char* string;
 typedef unsigned int uint;

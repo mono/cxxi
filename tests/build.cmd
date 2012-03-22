@@ -1,6 +1,6 @@
 @echo off
 
-SET FILES=MarshalingTests InheritanceTests FieldTests ManglingTests TemplateTests
+SET FILES=MarshalingTests InheritanceTests FieldTests ManglingTests TemplateTests ArrayTests
 SET CLASSES=HasField NumberClass AdderClass AdderClassWithVirtualBase AdderClassWithVirtualBaseNoVirtualMethods MultiplierClass MultiplierClassWithVirtualBase ClassWithNonVirtualBases ClassWithVirtualBases ClassThatOverridesStuff ClassThatRoundtrips Compression Namespaced Namespaced2 ClassWithCopyCtor ClassWithDtor ClassWithoutCopyCtor Class AdderTemplate
 SET top_srcdir=..\
 SET BUILD_DIR=%top_srcdir%bin\Debug\
