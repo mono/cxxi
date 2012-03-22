@@ -15,6 +15,7 @@ using Mono.Cxxi.Abi;
 using Templates;
 using NDesk.Options;
 using Mono.Cxxi;
+using Templates.Templates.CSharp;
 
 public class Generator {
 
@@ -539,11 +540,18 @@ public class Generator {
 			return GetType (GetTypeNode (n), modifiers);
 		case "ArrayType":
 			CppModifiers mod = null;
-			if (n.Attributes ["max"] != null && n.Attributes ["min"] != null)
-				mod = new CppModifiers.ArrayModifier (int.Parse (n.Attributes ["max"].TrimEnd ('u')) - int.Parse (n.Attributes ["min"].TrimEnd ('u')) + 1);
-			else
-				mod = CppModifiers.Array;
-			return GetType (GetTypeNode (n), modifiers.Modify (mod));
+		        var max = n.Attributes ["max"];
+		        var min = n.Attributes ["min"];
+                if (max != null && min != null)
+                {
+                    var l = GetLongValue (max) - GetLongValue (min);
+                    mod = new CppModifiers.ArrayModifier ((int)l + 1);
+                }
+                else
+                {
+                    mod = CppModifiers.Array;
+                }
+		        return GetType(GetTypeNode(n), modifiers.Modify(mod));
 		case "PointerType":
 			return GetType (GetTypeNode (n), modifiers.Modify (CppModifiers.Pointer));
 		case "ReferenceType":
@@ -576,7 +584,17 @@ public class Generator {
 		return modifiers.CopyTypeFrom (new CppType (fundamental, string.Join ("::", NodeToNamespace [n].FullyQualifiedName)));
 	}
 
-	Node GetTypeNode (Node n) {
+    private long GetLongValue(string max)
+    {
+        var value = max.TrimEnd ('u');
+
+        if (value.StartsWith ("0x"))
+            return Convert.ToInt64(value, 16);
+
+        return long.Parse (value);
+    }
+
+    Node GetTypeNode (Node n) {
 		return Node.IdToNode [n.Attributes ["type"]];
 	}
 
