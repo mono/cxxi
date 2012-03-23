@@ -212,9 +212,17 @@ public class Generator {
 			Lib.Namespaces.Add (ns);
 		}
 
-		for (var i = 0; i < Lib.Namespaces.Count; i++) {
+        foreach (Namespace ns in Lib.Namespaces)
+        {
+            SetParentNamespace(ns);
+        }
+
+        // NodeToNamespace mapping is complete. Lets make a copy.
+
+        var mapping = new Dictionary<Node, Namespace> (NodeToNamespace);
+
+	    for (var i = 0; i < Lib.Namespaces.Count; i++) {
 			Namespace ns = Lib.Namespaces [i];
-			SetParentNamespace (ns);
 
 			var filter = GetFilterOrDefault (ns);
 			if (filter.Mode == FilterMode.Exclude)
@@ -247,7 +255,13 @@ public class Generator {
 
 			// Compute bases
 			foreach (Node bn in klass.Node.Children.Where (o => o.Type == "Base")) {
-				Class baseClass = NodeToNamespace [bn.NodeForAttr ("type")] as Class;
+			    var nodeForAttr = bn.NodeForAttr ("type");
+                if(!NodeToNamespace.ContainsKey(nodeForAttr))
+                {
+                    Console.WriteLine ("FATAL ERROR: Base class '{0}' not found for type '{1}'", mapping[nodeForAttr].Name, klass.Name);
+                    Environment.Exit(1);
+                }
+			    Class baseClass = NodeToNamespace [nodeForAttr] as Class;
 				Debug.Assert (baseClass != null);
 				klass.BaseClasses.Add (baseClass);
                 if (bn.IsTrue("virtual"))
@@ -578,6 +592,15 @@ public class Generator {
 
 		if (!NodeToNamespace.ContainsKey (n)) {
 			// FIXME: Do something better
+            if(string.IsNullOrEmpty(n.Name))
+            {
+                Console.WriteLine ("WARNING: Could not find type with id '{0}'", n.Id);
+            }
+            else
+            {
+                Console.WriteLine ("WARNING: Could not find type '{0}'", n.Name);
+            }
+		    
 			return CppTypes.Unknown;
 		}
 
