@@ -15,7 +15,7 @@ using Mono.Cxxi.Abi;
 using Templates;
 using NDesk.Options;
 using Mono.Cxxi;
-using Templates.Templates.CSharp;
+using Templates;
 
 public class Generator {
 
