@@ -78,6 +78,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ArrayTests.cs" />
     <Compile Include="generated\AdderClass.cs" />
     <Compile Include="generated\AdderClassWithVirtualBase.cs" />
     <Compile Include="generated\AdderClassWithVirtualBaseNoVirtualMethods.cs" />
@@ -120,6 +121,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <None Include="build.cmd" />
     <None Include="Native\NUnit.cpp" />
     <None Include="Native\NUnit.h" />
     <None Include="Native\MarshalingTests.cpp" />
@@ -162,5 +164,12 @@
       <Project>{AD0F9378-789C-4AF1-B0DD-6DD9A63C3401}</Project>
       <Name>generator</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Native\ArrayTests.cpp" />
+    <None Include="Native\ArrayTests.h" />
+    <None Include="Native\common.h" />
+    <None Include="Native\TemplateTests.cpp" />
+    <None Include="Native\TemplateTests.h" />
   </ItemGroup>
 </Project>
