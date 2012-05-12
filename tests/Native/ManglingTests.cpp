@@ -1,10 +1,25 @@
 
 #include "ManglingTests.h"
 #include <stdio.h>
+Compression::Compression ()
+{
+}
 
 void Compression::Test1 (const Compression* a1, const char* a2, const Compression* a3, const char* a4)
 {
 	printf ("Compression::Test1");
+}
+
+void Compression::Test3 (requestHandler* handler, Compression* a1, int resultCode, char* resultString)
+{
+	if(handler)
+		handler(a1, resultCode, resultString);
+}
+
+void Compression::Test4 (requestHandler* handler, int resultCode, char* resultString)
+{
+	if(handler)
+		handler(this, resultCode, resultString);
 }
 
 void Ns1::Namespaced::Test1 ()

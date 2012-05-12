@@ -44,6 +44,7 @@ public class Class : Namespace {
 		Methods = new List<Method> ();
 		NestedClasses = new List<Class> ();
 		NestedEnums = new List<Enumeration> ();
+        NestedDelegates = new List<Function>();
 	}
 
 	public List<Class> BaseClasses {
@@ -62,6 +63,10 @@ public class Class : Namespace {
 		get; set;
 	}
 
+    public List<Function> NestedDelegates {
+        get; set;
+    }
+
 	public List<Field> Fields {
 		get; set;
 	}
@@ -74,6 +79,8 @@ public class Class : Namespace {
 		get;
 		set;
 	}
+
+    
 
     public string TemplateName {
         get; set;

@@ -4,10 +4,20 @@
 
 class EXPORT Compression {
 public:
+	int number;
+
+	typedef void (requestHandler)(Compression* comp, int resultCode, char* resultString);
+
+	Compression ();
 	static void Test1 (const Compression* a1, const char* a2, const Compression* a3, const char* a4);
 	static int Test2 (const char *c1, const float *f1, const int *i1,
 		const char *c2, const float *f2, const int *i2, double *d1, double *d2, int i) { printf("%d\n", i); return i; }
+	static void Test3 (requestHandler* handler, Compression* comp, int resultCode, char* resultString);
+
+	void Test4 (requestHandler* handler, int resultCode, char* resultString);
 };
+
+
 
 namespace Ns1 {
 	class EXPORT Namespaced {

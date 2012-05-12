@@ -36,8 +36,9 @@ public class Generator {
 
 	// Code templates
 	public LibsBase LibsTemplate { get; set; }
-	public ClassBase ClassTemplate { get; set; }
-	public EnumBase EnumTemplate { get; set; }
+    public ClassBase ClassTemplate { get; set; }
+    public EnumBase EnumTemplate { get; set; }
+    public FunctionBase FunctionTemplate { get; set; }
 
 	public static int Main (String[] args) {
 		var generator = new Generator ();
@@ -113,8 +114,9 @@ public class Generator {
 
 		// Code templates
 		LibsTemplate = new CSharpLibs ();
-		ClassTemplate = new CSharpClass ();
-		EnumTemplate = new CSharpEnum ();
+        ClassTemplate = new CSharpClass ();
+        EnumTemplate = new CSharpEnum ();
+        FunctionTemplate = new CSharpFunction ();
 
 		InputFileName = args [0];
 
@@ -181,10 +183,10 @@ public class Generator {
 		return root;
 	}
 
-	void CreateTypes (Node root) {
-
-		foreach (Node n in root.Children) {
-			if (n.IsTrue ("incomplete") || !n.HasValue ("name") || n.Attributes ["name"] == "::")
+	void CreateTypes (Node root)
+	{
+	    foreach (Node n in root.Children) {
+	        if (n.IsTrue ("incomplete") || !n.HasValue ("name") || n.Attributes ["name"] == "::")
 				continue;
 
 			Namespace ns;
@@ -203,6 +205,14 @@ public class Generator {
 				ns = new Namespace (n);
 				break;
 
+            case "Typedef":
+			    var typeNode = GetTypeNode(n);
+                if(typeNode.Type != "FunctionType")
+                    continue;
+
+			    ns = new Function (n);
+                NodeToNamespace[typeNode] = ns;
+                break;
 			default:
 				continue;
 
@@ -328,7 +338,65 @@ public class Generator {
 				continue;
 			}
 
-			var klass = ns as Class;
+		    var function = ns as Function;
+		    if(function != null)
+		    {
+                if (parentClass != null)
+                    parentClass.NestedDelegates.Add (function);
+
+                var funcTypeNode = GetTypeNode (function.Node);
+
+                if (function.Node.HasValue ("access"))
+                {
+                    var access = function.Node.Attributes["access"];
+                    function.Access = (Access) Enum.Parse(typeof (Access), access);
+                }
+                else
+                {
+                    function.Access = Access.@public;
+                }
+
+		        var c = 0;
+                foreach (Node arg in funcTypeNode.Children.Where (o => o.Type == "Argument")) {
+                    string argname;
+                    if (string.IsNullOrEmpty (arg.Name))
+                        argname = "arg" + c;
+                    else
+                        argname = arg.Name;
+
+                    var typeNode = GetTypeNode (arg);
+                    var argtype = GetType (typeNode);
+                    if (argtype.ElementType == CppTypes.Unknown) {
+                        argtype = new CppType (CppTypes.Void, CppModifiers.Pointer);
+                    }
+
+                    if (CppTypeToManaged (argtype) == null) {
+                        argtype = new CppType (CppTypes.Void, CppModifiers.Pointer);
+                    }
+
+                    function.Parameters.Add (new Parameter (argname, argtype));
+                    c++;
+                }
+
+                CppType retType;
+                if (funcTypeNode.HasValue ("returns"))
+                    retType = GetType (funcTypeNode.NodeForAttr ("returns"));
+                else
+                    retType = CppTypes.Void;
+
+                if (retType.ElementType == CppTypes.Unknown) {
+                    retType = CppTypes.Void;
+                }
+                if (CppTypeToManaged (retType) == null) {
+                    //Console.WriteLine ("\t\tS: " + retType);
+                    retType = CppTypes.Void;
+                }
+
+                function.ReturnType = retType;
+                continue;
+		    }
+
+		    var klass = ns as Class;
 			if (klass == null || !klass.Node.HasValue ("members"))
 				continue;
 
@@ -343,7 +411,7 @@ public class Generator {
 				bool dtor = false;
 				bool skip = false;
 
-				switch (n.Type) {
+			    switch (n.Type) {
 				case "Field":
 					var fieldType = GetType (GetTypeNode (n));
 					if (fieldType.ElementType == CppTypes.Unknown && fieldType.ElementTypeName == null)
@@ -379,19 +447,20 @@ public class Generator {
 
 				string name = dtor ? "Destruct" : n.Name;
 
-				var method = new Method (n) {
-						Name = name,
-						Access = (Access)Enum.Parse (typeof (Access), n.Attributes ["access"]),
-						IsVirtual = n.IsTrue ("virtual"),
-						IsStatic = n.IsTrue ("static"),
-						IsConst = n.IsTrue ("const"),
-						IsInline = n.IsTrue ("inline"),
-						IsArtificial = n.IsTrue ("artificial"),
-						IsConstructor = ctor,
-						IsDestructor = dtor
-				};
+			    var method = new Method (n) {
+			                                        Name = name,
+			                                        Access = (Access)Enum.Parse (typeof (Access), n.Attributes["access"]),
+                                                    IsVirtual = n.IsTrue ("virtual"),
+                                                    IsStatic = n.IsTrue ("static"),
+                                                    IsConst = n.IsTrue ("const"),
+                                                    IsInline = n.IsTrue ("inline"),
+                                                    IsArtificial = n.IsTrue ("artificial"),
+			                                        IsConstructor = ctor,
+			                                        IsDestructor = dtor
+			                                    };
 
-                // If this is a template class then adjust the method name
+
+			    // If this is a template class then adjust the method name
                 // It needs to match the method name we're going to generate
                 bool isTemplate = !string.IsNullOrEmpty(klass.TemplateName);
                 if (isTemplate && method.IsConstructor)
@@ -408,6 +477,7 @@ public class Generator {
 					retType = GetType (n.NodeForAttr ("returns"));
 				else
 					retType = CppTypes.Void;
+
 				if (retType.ElementType == CppTypes.Unknown) {
 					retType = CppTypes.Void;
 					skip = true;
@@ -424,20 +494,22 @@ public class Generator {
 				var argTypes = new List<CppType> ();
 				foreach (Node arg in n.Children.Where (o => o.Type == "Argument")) {
 					string argname;
-					if (arg.Name == null || arg.Name == "")
+					if (string.IsNullOrEmpty(arg.Name))
 						argname = "arg" + c;
 					else
 						argname = arg.Name;
 
-					var argtype = GetType (GetTypeNode (arg));
-					if (argtype.ElementType == CppTypes.Unknown) {
-						//Console.WriteLine ("Skipping method " + klass.Name + "::" + member.Name + " () because it has an argument with unknown type '" + TypeNodeToString (arg) + "'.");
+				    var typeNode = GetTypeNode (arg);
+				    var argtype = GetType (typeNode);
+					if (argtype.ElementType == CppTypes.Unknown)
+					{
+					    Console.WriteLine ("Skipping method " + klass.Name + "::" + method.Name + " () because it has an argument with unknown type '" + typeNode.Id + "'.");
 						argtype = new CppType (CppTypes.Void, CppModifiers.Pointer);
 						skip = true;
 					}
 
 					if (CppTypeToManaged (argtype) == null) {
-						//Console.WriteLine ("\t\tS: " + argtype);
+                        Console.WriteLine ("\t\tS: " + argtype);
 						argtype = new CppType (CppTypes.Void, CppModifiers.Pointer);
 						skip = true;
 					}
@@ -474,7 +546,7 @@ public class Generator {
 		}
 	}
 
-	//
+    //
 	// Property support
 	//
     bool AddAsProperty (Class klass, Method method) {
@@ -586,6 +658,9 @@ public class Generator {
 		case "Enumeration":
 			fundamental = CppTypes.Enum;
 			break;
+        case "FunctionType":
+		    fundamental = CppTypes.Delegate;
+		    break;
 		default:
 			return CppTypes.Unknown;
 		}
@@ -635,7 +710,7 @@ public class Generator {
 		case CppTypes.Class:
 		case CppTypes.Struct:
 		case CppTypes.Enum:
-
+        case CppTypes.Delegate:
 			var filter = GetFilterOrDefault (t);
 			var qname = filter.TypeName.Replace ("::", ".");
 
@@ -690,19 +765,31 @@ public class Generator {
 				continue;
 			}
 
-			var @enum = ns as Enumeration;
-			if (@enum != null) {
+            var @enum = ns as Enumeration;
+            if (@enum != null) {
 
-				using (TextWriter w = File.CreateText (Path.Combine (OutputDir, @enum.Name + ".cs"))) {
-					EnumTemplate.Generator = this;
-					EnumTemplate.Enum = @enum;
-					EnumTemplate.Nested = false;
-					w.Write (EnumTemplate.TransformText ());
-				}
+                using (TextWriter w = File.CreateText (Path.Combine (OutputDir, @enum.Name + ".cs"))) {
+                    EnumTemplate.Generator = this;
+                    EnumTemplate.Enum = @enum;
+                    EnumTemplate.Nested = false;
+                    w.Write (EnumTemplate.TransformText ());
+                }
 
-				continue;
-			}
+                continue;
+            }
 
+            var func = ns as Function;
+            if (func != null) {
+
+                using (TextWriter w = File.CreateText (Path.Combine (OutputDir, func.Name + ".cs"))) {
+                    FunctionTemplate.Generator = this;
+                    FunctionTemplate.Function = func;
+                    FunctionTemplate.Nested = false;
+                    w.Write (FunctionTemplate.TransformText ());
+                }
+
+                continue;
+            }
 		}
 	}
 
@@ -712,6 +799,16 @@ public class Generator {
 		        !t.Modifiers.Contains (CppModifiers.Pointer) &&
 		        !t.Modifiers.Contains (CppModifiers.Reference) &&
 		        !t.Modifiers.Contains (CppModifiers.Array));
+	}
+
+	static public bool IsDelegate (CppType t)
+	{
+		return (t.ElementType == CppTypes.Delegate);
+	}
+
+	static public bool IsCppType (CppType t)
+	{
+		return (t.ElementType == CppTypes.Class);
 	}
 
 	Filter GetFilterOrDefault (Namespace ns)

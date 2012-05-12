@@ -89,6 +89,7 @@
     <Compile Include="CppLibrary.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="Abi\CppAbi.cs" />
+    <Compile Include="CppMarshaler.cs" />
     <Compile Include="Interfaces.cs" />
     <Compile Include="Attributes.cs" />
     <Compile Include="CppInstancePtr.cs" />
@@ -109,6 +110,8 @@
     <Compile Include="Abi\EmitInfo.cs" />
     <Compile Include="Abi\SymbolResolver.cs" />
     <Compile Include="Abi\Impl\MsvcTypeInfo.cs" />
+    <Compile Include="WeakDelegate.cs" />
+    <Compile Include="WeakDelegateCollector.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

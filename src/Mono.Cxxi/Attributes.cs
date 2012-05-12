@@ -234,6 +234,11 @@ using Mono.Cxxi;
 			//  only CppModifiers were applied .. apply CppType from managed parameter type
 			if (mangleType.ElementType == CppTypes.Unknown && mangleType.ElementTypeName == null)
 				mangleType.CopyTypeFrom (CppType.ForManagedType (managedType));
+            else if(typeof(Delegate).IsAssignableFrom(managedType))
+            {
+                mangleType.ElementType = CppTypes.Delegate;
+                mangleType.Modifiers.Add(CppModifiers.Delegate);
+            }
 			else if (mangleType.ElementType == CppTypes.Unknown)
 				// FIXME: otherwise, we just assume it's CppTypes.Class for now.
 				mangleType.ElementType = CppTypes.Class;

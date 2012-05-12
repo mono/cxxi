@@ -62,6 +62,8 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
+    <WarningLevel>4</WarningLevel>
+    <Optimize>false</Optimize>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
     <OutputPath>..\..\bin\Release\</OutputPath>
@@ -73,8 +75,12 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
+    <DebugType>none</DebugType>
+    <WarningLevel>4</WarningLevel>
+    <Optimize>false</Optimize>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Function.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="Class.cs" />
     <Compile Include="Field.cs" />
@@ -87,9 +93,6 @@
       <DependentUpon>Base.tt</DependentUpon>
     </Compile>
     <Compile Include="Templates\BaseMembers.cs" />
-    <Compile Include="Templates\CSharp\CSharpClass.cs">
-      <DependentUpon>CSharpClass.tt</DependentUpon>
-    </Compile>
     <Compile Include="Templates\CSharp\CSharpLibs.cs">
       <DependentUpon>CSharpLibs.tt</DependentUpon>
     </Compile>
@@ -103,6 +106,16 @@
       <DependentUpon>CSharpEnum.tt</DependentUpon>
     </Compile>
     <Compile Include="Namespace.cs" />
+    <Compile Include="Templates\CSharp\CSharpFunction.cs">
+      <DependentUpon>CSharpFunction.tt</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Compile Include="Templates\CSharp\CSharpClass.cs">
+      <DependentUpon>CSharpClass.tt</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System">
@@ -168,6 +181,12 @@
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>CSharpEnum.cs</LastGenOutput>
     </None>
+    <None Include="Templates\CSharp\CSharpFunction.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>CSharpFunction.cs</LastGenOutput>
+    </None>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
 </Project>

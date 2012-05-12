@@ -1,0 +1,58 @@
+<#@ template language="C#" inherits="FunctionBase" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="Mono.Cxxi" #>
+<#
+	var @namespace = Generator.Lib.BaseNamespace + (Function.ParentNamespace != null? "." + string.Join (".", Function.ParentNamespace.FullyQualifiedName) : "");
+
+if (!Nested) {
+#>
+
+// -------------------------------------------------------------------------
+//  Managed delegate for <#= Function.Name #>
+//  Generated from <#= Path.GetFileName (Generator.InputFileName) #> on <#= DateTime.Now #>
+//
+//  This file was auto generated. Do not edit.
+// -------------------------------------------------------------------------
+
+using System;
+using System.Runtime.InteropServices;
+using Mono.Cxxi;
+
+namespace <#= @namespace #> {
+<# } /* if !Nested */ #>
+<#
+	var returnType = CSharpLanguage.TypeName (Generator.CppTypeToManaged (Function.ReturnType), Context.Wrapper | Context.Return);
+#>
+	[UnmanagedFunctionPointer (CallingConvention.Cdecl)]
+	<#= Function.Access.ToString() #> delegate <#= returnType #> <#= Function.FormattedName #> (<# WriteParameters (Function.Parameters); #>);
+
+<# if (!Nested) { #>
+}
+<# } #>
+<#+
+
+private void WriteParameters (IList<Parameter> parameters)
+{
+	for (var i = 0; i < parameters.Count; i++) {
+		if (i != 0)
+			Write (", ");
+
+		var type = CSharpLanguage.TypeName (Generator.CppTypeToManaged (parameters [i].Type), Context.Parameter);
+		var mangleAs = parameters [i].Type.ToString ();
+		if (mangleAs != "" && mangleAs != type)
+			Write ("[MangleAs (\"{0}\")] ", mangleAs);
+		if (Generator.IsByVal (parameters [i].Type))
+			Write ("[ByVal] ");
+		if (Generator.IsByVal (parameters [i].Type))
+			Write ("[ByVal] ");
+		if (Generator.IsCppType (parameters [i].Type))
+			Write ("[MarshalAs (UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof ("+type+".Marshaler))] ");
+
+		Write (type);
+		Write (" ");
+		Write (CSharpLanguage.SafeIdentifier (parameters [i].Name));
+	}
+}
+#>

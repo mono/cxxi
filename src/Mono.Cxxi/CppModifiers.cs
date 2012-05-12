@@ -140,8 +140,9 @@ namespace Mono.Cxxi {
 		public static readonly CppModifiers Signed = new SignedModifier ();
 		public static readonly CppModifiers Unsigned = new UnsignedModifier ();
 		public static readonly CppModifiers Short = new ShortModifier ();
-		public static readonly CppModifiers Long = new LongModifier ();
-		public static readonly CppModifiers Template = new TemplateModifier ();
+        public static readonly CppModifiers Long = new LongModifier ();
+        public static readonly CppModifiers Template = new TemplateModifier ();
+        public static readonly CppModifiers Delegate = new DelegateModifier ();
 
 		// Add list of modifiers here:
 		public class ConstModifier : CppModifiers { public override string ToString () { return "const"; } }
@@ -150,8 +151,9 @@ namespace Mono.Cxxi {
 		public class VolatileModifier : CppModifiers { public override string ToString () { return "volatile"; } }
 		public class SignedModifier : CppModifiers { public override string ToString () { return "signed"; } }
 		public class UnsignedModifier : CppModifiers { public override string ToString () { return "unsigned"; } }
-		public class ShortModifier : CppModifiers { public override string ToString () { return "short"; } }
-		public class LongModifier : CppModifiers { public override string ToString () { return "long"; } }
+        public class ShortModifier : CppModifiers { public override string ToString () { return "short"; } }
+        public class LongModifier : CppModifiers { public override string ToString () { return "long"; } }
+        public class DelegateModifier : CppModifiers { public override string ToString () { return "delegate"; } }
 
 		public class ArrayModifier : CppModifiers {
 			public int? Size { get; set; }

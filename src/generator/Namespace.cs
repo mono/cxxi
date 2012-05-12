@@ -28,7 +28,7 @@ public class Namespace {
 	}
 
 	private string [] fullyQualifiedName;
-	public string [] FullyQualifiedName {
+	public virtual string [] FullyQualifiedName {
 		get {
 			if (fullyQualifiedName == null) {
 

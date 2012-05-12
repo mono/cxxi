@@ -23,6 +23,7 @@ if (!Nested) {
 // -------------------------------------------------------------------------
 
 using System;
+using System.Runtime.InteropServices;
 using Mono.Cxxi;
 
 namespace <#= @namespace #> {
@@ -62,6 +63,7 @@ namespace <#= @namespace #> {
 		if (method.IsConstructor) Write ("[Constructor] ");
 		if (method.IsDestructor)  Write ("[Destructor] ");
 		if (method.IsCopyCtor)    Write ("[CopyConstructor] ");
+		if (method.IsProtected)   Write ("[Protected] ");
 
 		if (Generator.IsByVal (method.ReturnType)) {
 			Write ("[return: ByVal] ");
@@ -85,7 +87,7 @@ namespace <#= @namespace #> {
 				Write (", ");
 		}
 
-		WriteParameters (method.Parameters, true, !method.IsVirtual);
+		WriteParameters (method.Parameters, true, !method.IsVirtual, false);
 		Write (");\n");
 	}
 	foreach (var field in Class.Fields.Where (f => f.Access != Access.@private)) {
@@ -136,6 +138,43 @@ namespace <#= @namespace #> {
 		}
 <# } PopIndent(); #>
 
+<# /* Marshaler */ #>
+
+		class Marshaler : ICustomMarshaler
+        {
+            private Marshaler ()
+            {
+            }
+
+            public object MarshalNativeToManaged (IntPtr pNativeData)
+            {
+                return CppMarshaler.MarshalNativeToManaged(pNativeData, () => new <#= wrapper #>(pNativeData));
+            }
+
+            public IntPtr MarshalManagedToNative (object managedObj)
+            {
+                throw new NotImplementedException ();
+            }
+
+            public void CleanUpNativeData (IntPtr pNativeData)
+            {
+            }
+
+            public void CleanUpManagedData (object managedObj)
+            {
+            }
+
+            public int GetNativeDataSize ()
+            {
+                throw new NotImplementedException ();
+            }
+
+            public static ICustomMarshaler GetInstance (string pstrCookie)
+            {
+                return new Marshaler();
+            }
+        }
+
 <# /* Nested classes */ #>
 <# foreach (var klass in Class.NestedClasses) {
 	var nestedTempl = new CSharpClass {
@@ -152,6 +191,14 @@ namespace <#= @namespace #> {
 	Generator.EnumTemplate.Enum = @enum;
 	Generator.EnumTemplate.Nested = true;
 	Write (Generator.EnumTemplate.TransformText ());
+} #>
+
+<# /* Nested Delegates */ #>
+<# foreach (var function in Class.NestedDelegates) {
+	Generator.FunctionTemplate.Generator = Generator;
+	Generator.FunctionTemplate.Function = function;
+	Generator.FunctionTemplate.Nested = true;
+	Write (Generator.FunctionTemplate.TransformText ());
 } #>
 
 <# /* Subclass constructor */ #>
@@ -185,7 +232,7 @@ namespace <#= @namespace #> {
 					Write (", ");
 			}
 
-			WriteParameters (method.Parameters, false, false);
+			WriteParameters (method.Parameters, false, false, true);
 			Write (");\n");
 			PopIndent ();
 
@@ -287,7 +334,7 @@ foreach (var npBase in Class.BaseClasses.Skip (1)) { #>
 
 			Write ("instance.{0} (", npBase.Name + "__" + method.FormattedName);
 
-			WriteParameters (method.Parameters, false, false);
+			WriteParameters (method.Parameters, false, false, false);
 			PopIndent ();
 			Write (");\n{0}}}\n\n", CurrentIndent);
 
@@ -296,7 +343,7 @@ foreach (var npBase in Class.BaseClasses.Skip (1)) { #>
 
 			Write ("base.{0} (", method.FormattedName);
 
-			WriteParameters (method.Parameters, false, false);
+			WriteParameters (method.Parameters, false, false, false);
 			PopIndent ();
 			Write (");\n{0}}}\n\n", CurrentIndent);
 		}
@@ -327,7 +374,7 @@ foreach (var npBase in Class.BaseClasses.Skip (1)) { #>
 
 			Write ("{0}.{1} (", "__cxxi_" + npBase.Name, npBase.Name + "__" + method.FormattedName);
 
-			WriteParameters (method.Parameters, false, false);
+			WriteParameters (method.Parameters, false, false, false);
 			PopIndent ();
 			Write (");\n{0}}}\n\n", CurrentIndent);
 		}
@@ -350,6 +397,7 @@ if (overrideInitBases || Class.BaseClasses.Count > 1) { #>
 <# } #>
 
 <#+
+
 private void WriteMethodHeader (Method method, string layoutClass, bool isNonPrimaryOverride, bool @protected)
 {
 	var returnType = CSharpLanguage.TypeName (Generator.CppTypeToManaged (method.ReturnType), Context.Wrapper | Context.Return);
@@ -371,7 +419,7 @@ private void WriteMethodHeader (Method method, string layoutClass, bool isNonPri
 	}
 
 	Write (" (");
-	WriteParameters (method.Parameters, true, false);
+	WriteParameters (method.Parameters, true, false, false);
 	Write (")\n");
 
 	if (method.IsConstructor && layoutClass != null)
@@ -386,12 +434,13 @@ private void WriteMethodHeader (Method method, string layoutClass, bool isNonPri
 		Write ("return ");
 }
 
-private void WriteParameters (IList<Parameter> parameters, bool writeType, bool writeAttributes)
+private void WriteParameters (IList<Parameter> parameters, bool writeType, bool writeAttributes, bool wrapDelegates)
 {
 	for (var i = 0; i < parameters.Count; i++) {
 		if (i != 0)
 			Write (", ");
 
+		var isDelegate = false;
 		var type = CSharpLanguage.TypeName (Generator.CppTypeToManaged (parameters [i].Type), Context.Parameter);
 
 		if (writeAttributes) {
@@ -407,10 +456,21 @@ private void WriteParameters (IList<Parameter> parameters, bool writeType, bool 
 			Write (" ");
 		} else {
 			if (type.StartsWith ("ref "))
+			{
 				Write ("ref ");
+			}
+			else if(wrapDelegates)
+			{
+				isDelegate = Generator.IsDelegate(parameters [i].Type);
+				if(isDelegate)
+					Write("new WeakDelegate<"+type+">(");
+			}
 		}
 
 		Write (CSharpLanguage.SafeIdentifier (parameters [i].Name));
+
+		if(isDelegate)
+			Write (")");
 	}
 }
 

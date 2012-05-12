@@ -96,6 +96,11 @@ public class Method {
 		get; set;
 	}
 
+    public bool IsProtected
+    {
+        get { return this.Access == Access.@protected; }
+    }
+
 	// The C# method name
 	public string FormattedName {
 		get {

@@ -33,4 +33,11 @@ namespace Templates {
 		public bool Nested { get; set; }
 		public Enumeration Enum { get { return Current; } set { Current = value; } }
 	}
+
+    public partial class FunctionBase : Base, ITemplate<Function> {
+        public Generator Generator { get; set; }
+        public Function Current { get; set; }
+        public bool Nested { get; set; }
+        public Function Function { get { return Current; } set { Current = value; } }
+    }
 }

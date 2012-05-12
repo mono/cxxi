@@ -52,7 +52,8 @@ namespace Mono.Cxxi {
 		Double,
 		WChar_T,
 		// for template type parameters
-		Typename
+		Typename,
+        Delegate
 	}
 
 	public struct CppType {
@@ -63,6 +64,7 @@ namespace Mono.Cxxi {
 		public static List<Func<CppType,Type>> CppTypeToManagedMap = new List<Func<CppType, Type>> () {
 			(t) => (t.ElementType == CppTypes.Class ||
 			        t.ElementType == CppTypes.Struct ||
+                    t.ElementType == CppTypes.Delegate ||
 			       (t.ElementType == CppTypes.Unknown && t.ElementTypeName != null)) &&
 			       (t.Modifiers.Count (m => m == CppModifiers.Pointer) == 1 ||
 			        t.Modifiers.Contains (CppModifiers.Reference))? typeof (ICppObject) : null,
@@ -436,6 +438,7 @@ namespace Mono.Cxxi {
 			if (!typeof (Delegate).IsAssignableFrom (delType))
 				throw new ArgumentException ("Argument must be a delegate type");
 
+            return new CppType (CppTypes.Delegate);
 			throw new NotImplementedException ();
 		}
 
