@@ -458,14 +458,16 @@ if (!Nested) {
 					fieldType = fieldType + "._" + fieldType;
 
 				// handle fixed-length arrays
-				var array = field.Type.Modifiers.OfType<CppModifiers.ArrayModifier> ().SingleOrDefault (); //FIXME: Handle more than one?
+				var array = field.Type.Modifiers.OfType<CppModifiers.ArrayModifier> ().FirstOrDefault ();
 				if (array != null && array.Size.HasValue) {
+                    var arrays = field.Type.Modifiers.OfType<CppModifiers.ArrayModifier>();
+                    int totalSize = arrays.Where(a => a.Size.HasValue).Select(a => a.Size.Value).Aggregate((a, b) => a * b);
 					fieldType = fieldType.TrimEnd ('[',']');
                     if (field.Type.IsFixedType)
-                        WriteLine ("public fixed {0} {1} [{2}];", fieldType, CSharpLanguage.SafeIdentifier(field.Name), array.Size.Value);
+                        WriteLine ("public fixed {0} {1} [{2}];", fieldType, CSharpLanguage.SafeIdentifier(field.Name), totalSize);
                     else
                     {
-                        WriteLine ("[System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.ByValArray, SizeConst={0})]", array.Size.Value);
+                        WriteLine ("[System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.ByValArray, SizeConst={0})]", totalSize);
                         WriteLine ("public {0}[] {1};", fieldType, CSharpLanguage.SafeIdentifier(field.Name));
                     }
 				} else {

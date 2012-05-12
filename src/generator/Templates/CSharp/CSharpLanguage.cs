@@ -30,7 +30,12 @@ namespace Templates {
 		}
 
 		public static string TypeName (string str, Context context)
-		{
+        {
+            // Remove the array brackets from the end
+            // Get the TypeName without the brackets and add them back
+            if (str.EndsWith("[]"))
+                return TypeName(str.Substring(0, str.Length - 2), context) + "[]";
+
 			switch (str) {
 			case "System.Void":    return "void";
 			case "System.Boolean": return "bool";

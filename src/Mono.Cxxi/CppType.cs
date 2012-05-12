@@ -77,6 +77,7 @@ namespace Mono.Cxxi {
 			(t) => t.ElementType == CppTypes.Char && t.Modifiers.Count (m => m == CppModifiers.Pointer) == 2? typeof (string).MakeArrayType () : null,
 
 			// arrays
+            (t) => t.Modifiers.Contains (CppModifiers.Array) && t.Modifiers.Contains (CppModifiers.Pointer) && (t.Subtract (CppModifiers.Array).ToManagedType () != null)? typeof(IntPtr).MakeArrayType () : null,
 			(t) => t.Modifiers.Contains (CppModifiers.Array) && (t.Subtract (CppModifiers.Array).ToManagedType () != null)? t.Subtract (CppModifiers.Array).ToManagedType ().MakeArrayType () : null,
 
 			// convert single pointers to primatives to managed byref
@@ -154,7 +155,7 @@ namespace Mono.Cxxi {
             CppTypes.Float, CppTypes.Int, CppTypes.WChar_T
         };
 
-        public bool IsFixedType { get { return FixedTypes.Contains(this.ElementType); } }
+        public bool IsFixedType { get { return FixedTypes.Contains(this.ElementType) && !this.Modifiers.Contains(CppModifiers.Pointer); } }
 
 		public CppTypes ElementType { get; set; }
 
