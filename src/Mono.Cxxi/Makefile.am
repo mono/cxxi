@@ -58,6 +58,7 @@ FILES =  \
 	CppField.cs \
 	CppInstancePtr.cs \
 	CppLibrary.cs \
+	CppMarshaler.cs \
 	CppModifiers.cs \
 	CppType.cs \
 	CppTypeInfo.cs \

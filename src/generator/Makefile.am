@@ -53,6 +53,7 @@ FILES =  \
 	Enumeration.cs \
 	Field.cs \
 	Filter.cs \
+	Function.cs \
 	Generator.cs \
 	Lib.cs \
 	Method.cs \
@@ -66,6 +67,7 @@ FILES =  \
 	Templates/Context.cs \
 	Templates/CSharp/CSharpClass.cs \
 	Templates/CSharp/CSharpEnum.cs \
+	Templates/CSharp/CSharpFunction.cs \
 	Templates/CSharp/CSharpLanguage.cs \
 	Templates/CSharp/CSharpLibs.cs
 
