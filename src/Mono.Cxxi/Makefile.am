@@ -63,13 +63,13 @@ FILES =  \
 	CppType.cs \
 	CppTypeInfo.cs \
 	Interfaces.cs \
-	WeakDelegate.cs \
-	WeakDelegateCollector.cs \
 	Util/DelegateTypeCache.cs \
 	Util/IEnumerableTransform.cs \
 	Util/LazyGeneratedList.cs \
 	Util/MethodSignature.cs \
-	Util/ReflectionHelper.cs 
+	Util/ReflectionHelper.cs \
+	WeakDelegate.cs \
+	WeakDelegateCollector.cs 
 
 DATA_FILES = 
 

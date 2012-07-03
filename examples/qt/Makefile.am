@@ -16,7 +16,7 @@ HANDWRITTEN = \
 all: hello.exe
 
 # HACK: some Mac versions of Qt don't play nice with pkg-config
-QT_FLAGS := `pkg-config --silence-errors --cflags QtCore QtGui || \
+QT_FLAGS := `pkg-config --cflags QtCore QtGui || \
 		(ln -s /Library/Frameworks/QtGui.framework/Versions/Current/Headers QtGui && \
 		ln -s /Library/Frameworks/QtCore.framework/Versions/Current/Headers QtCore && \
 		echo "-I. -I/Library/Frameworks/QtGui.framework/Versions/Current/Headers")`
@@ -25,7 +25,6 @@ qt-gui.xml: qt-gui.h
 	$(GCCXML) -fxml=$@ --gccxml-cxxflags $(QT_FLAGS) $^
 
 generated: qt-gui-filters.xml qt-gui.xml
-	$(RM) -r generated
 	$(MONO) --debug $(top_srcdir)/bin/Debug/generator.exe -o=generated -ns=Qt.Gui -lib=QtGui --filters=$^
 
 libQtGui-inline.so: qt-gui.cpp

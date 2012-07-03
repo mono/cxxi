@@ -37,5 +37,6 @@
 	<External implementation="struct">QString</External>
 	<External implementation="struct">QSize</External>
 	<External implementation="struct">QPoint</External>
-	<External implementation="struct">QFlags&lt;Qt::KeyboardModifier&gt;</External>
+	<External implementation="struct">QFlags</External>
+	 
 </Filter>
