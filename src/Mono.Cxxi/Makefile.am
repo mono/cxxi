@@ -63,6 +63,8 @@ FILES =  \
 	CppType.cs \
 	CppTypeInfo.cs \
 	Interfaces.cs \
+	WeakDelegate.cs \
+	WeakDelegateCollector.cs \
 	Util/DelegateTypeCache.cs \
 	Util/IEnumerableTransform.cs \
 	Util/LazyGeneratedList.cs \
