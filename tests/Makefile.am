@@ -15,7 +15,7 @@ NATIVE = \
 	TemplateTests
 
 MANAGED =  \
-	ArrayTests.cs
+	ArrayTests.cs \
 	FieldTests.cs \
 	InheritanceTests.cs \
 	ManglingTests.cs \
@@ -42,11 +42,9 @@ $(BUILD_DIR)/libTest-inline.so: $(addsuffix .cpp,$(NATIVE_SRC))
 	$(CXX) -fPIC --shared -fkeep-inline-functions -o $@ $^
 
 generated: $(addsuffix .xml,$(NATIVE))
-	$(RM) -r generated
 	$(foreach X,$?, \
 		mono --debug $(BUILD_DIR)/generator.exe -o=$@ -ns=Tests -lib=Test -inline=surrogatelib $(X) && \
 	) \
-	$(RM) generated/__*.cs && \
 	echo Bindings generated successfully.
 
 $(TEST_DLL): generated $(MANAGED) $(BUILD_DIR)/libTest.so $(BUILD_DIR)/libTest-inline.so
