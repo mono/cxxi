@@ -15,6 +15,7 @@ namespace Tester
 			var inheritTest = new InheritanceTests();
 			inheritTest.TestManagedOverride1();
 			inheritTest.TestManagedOverride2();
+
 			inheritTest.TestMultipleBases();
 			inheritTest.TestMultipleVirtualBases();
 			inheritTest.TestNonVirtualCallOnVirtualBaseClass();
@@ -27,7 +28,9 @@ namespace Tester
 			marshalingTest.TestByRefReturn();
 			marshalingTest.TestClassArg();
 			marshalingTest.TestClassArgByval();
+
 			marshalingTest.TestClassArgByvalNull();
+
 			marshalingTest.TestClassArgNull();
 			marshalingTest.TestClassReturn();
 			marshalingTest.TestPrimitiveReturn();
@@ -40,6 +43,11 @@ namespace Tester
 
             var tests = new ManglingTests();
             tests.TestCompression();
+			tests.TestNamespace();
+			tests.TestNamespace2();
+			tests.TestNamespace3();
+			tests.TestNamespace4();
+			tests.TestNamespaced2();
         }
     }
 }
