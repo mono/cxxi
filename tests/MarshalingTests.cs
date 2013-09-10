@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using NUnit.Framework;
 
 namespace Tests {
@@ -105,7 +106,19 @@ namespace Tests {
 		public void TestClassArgByvalNull ()
 		{
 			var c1 = new Class (4);
-			c1.CopyFromValue (null);
+
+			try
+			{
+				// This statement should trigger an ArgumentException
+				c1.CopyFromValue (null);
+				Debug.Assert(false);
+			}
+			catch(ArgumentException)
+			{
+
+			}
+
+
 		}
 
 		[Test]

@@ -58,6 +58,7 @@ FILES =  \
 	CppField.cs \
 	CppInstancePtr.cs \
 	CppLibrary.cs \
+	CppMarshaler.cs \
 	CppModifiers.cs \
 	CppType.cs \
 	CppTypeInfo.cs \
@@ -66,7 +67,9 @@ FILES =  \
 	Util/IEnumerableTransform.cs \
 	Util/LazyGeneratedList.cs \
 	Util/MethodSignature.cs \
-	Util/ReflectionHelper.cs 
+	Util/ReflectionHelper.cs \
+	WeakDelegate.cs \
+	WeakDelegateCollector.cs 
 
 DATA_FILES = 
 

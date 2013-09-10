@@ -1,30 +1,5 @@
-Directory structure
--------------------
+Known issues:
 
-src/
-  Mono.Cxxi
-    The runtime library
-  generator
-    The binding generator
-  qt
-    Auto generated Qt bindings + test program
+Function pointers do not work.
 
-tests/
-  Regression tests
-
-examples/
-  Hello
-    Small, Hello, World! example
-
-Inlining
---------
-
-Inline methods are mapped to a shared library name libFoo-inline.so where libFoo.so is the
-original shared library we are binding to. This library should be compiled using gcc's 
--fkeep-inline-functions option:
-
-g++ `pkg-config --cflags QtCore QtGui` --shared -fPIC -o libQtGui-inline.so -fkeep-inline-functions qt-gui.cpp `pkg-config --libs QtCore QtGui`
-
-
-
-    
+The generator does not store the mangled names of the c++ methods in the bindings, instead the cxxi library calculates the mangle name at run time. However the mangle name calculation in cxxi is incomplete and does not handle delegates which translate to function pointers in c++ world.
