@@ -1,7 +1,7 @@
 #! /bin/sh
 
 PROJECT=cxxi
-FILE=
+FILE= iostream
 CONFIGURE=configure.ac
 
 : ${AUTOCONF=autoconf}
