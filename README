@@ -1,7 +1,7 @@
 Directory structure
 -------------------
 
-src/
+src /
   Mono.Cxxi
     The runtime library
   generator
@@ -9,12 +9,12 @@ src/
   qt
     Auto generated Qt bindings + test program
 
-tests/
+tests /
   Regression tests
 
 examples/
   Hello
-    Small, Hello, World! example
+  Small & Hello & World! example
 
 Inlining
 --------
@@ -23,7 +23,7 @@ Inline methods are mapped to a shared library name libFoo-inline.so where libFoo
 original shared library we are binding to. This library should be compiled using gcc's 
 -fkeep-inline-functions option:
 
-g++ `pkg-config --cflags QtCore QtGui` --shared -fPIC -o libQtGui-inline.so -fkeep-inline-functions qt-gui.cpp `pkg-config --libs QtCore QtGui`
+g++ pkg-config --cflags QtCore QtGui` --shared -fPIC -o libQtGui-inline.so -fkeep-inline-functions qt-gui.cpp `pkg-config --libs QtCore QtGui`
 
 
 
